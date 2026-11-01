@@ -108,7 +108,7 @@ export function createRoom(
 export function joinRoom(code: string, name: string) {
   return db.transaction(() => {
     const room = readRoom(code);
-    if (room.ended) throw new RoomError("This ride has ended.", 410);
+    if (room.ended) throw new RoomError("This session has ended.", 410);
     if (room.locked)
       throw new RoomError(
         "The host has locked this room. Ask them to unlock it.",
@@ -139,7 +139,7 @@ export function mutate(
   return db.transaction(() => {
     const member = identify(code, token);
     const room = readRoom(code);
-    if (room.ended) throw new RoomError("This ride has ended.", 410);
+    if (room.ended) throw new RoomError("This session has ended.", 410);
     if (room.mode === "live" && !["vote", "lock", "end"].includes(action.type))
       throw new RoomError(
         "Use the connected Spotify player for this action.",

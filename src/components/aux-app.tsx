@@ -130,13 +130,13 @@ export function AuxApp() {
   const [ready, setReady] = useState(false);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [query, setQuery] = useState("");
-  const [mood, setMood] = useState("For your ride");
+  const [mood, setMood] = useState("For everyone");
   const [tab, setTab] = useState<"queue" | "discover" | "people">("queue");
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
   const [joinCode, setJoinCode] = useState("");
   const [person, setPerson] = useState("");
-  const [roomName, setRoomName] = useState("The scenic route");
+  const [roomName, setRoomName] = useState("The listening room");
   const [provider, setProvider] = useState<Provider>("Spotify");
   const [createMode, setCreateMode] = useState<"demo" | "live">("live");
   const [formError, setFormError] = useState("");
@@ -305,7 +305,7 @@ export function AuxApp() {
         }
         setRoom(next);
       }
-      if (a.type === "add") toast.success("Added to the ride queue");
+      if (a.type === "add") toast.success("Added to the shared queue");
       if (live && ["toggle", "next"].includes(a.type))
         toast("Command sent to Spotify. Updating playback shortly.");
       if (a.type === "remove") toast("Request removed");
@@ -379,7 +379,7 @@ export function AuxApp() {
   }
   const filtered = catalog.filter(
     (t) =>
-      (mood === "For your ride" || t.mood === mood) &&
+      (mood === "For everyone" || t.mood === mood) &&
       `${t.title} ${t.artist} ${t.album}`
         .toLowerCase()
         .includes(query.toLowerCase()),
@@ -485,7 +485,7 @@ export function AuxApp() {
             }}
           >
             <Radio size={18} />
-            The ride
+            The room
             <span className="nav-dot" />
           </button>
           <button
@@ -506,7 +506,7 @@ export function AuxApp() {
             }}
           >
             <Users size={18} />
-            The crew<span className="nav-count">{room.members.length}</span>
+            The people<span className="nav-count">{room.members.length}</span>
           </button>
         </nav>
         <div className="sidebar-room">
@@ -514,7 +514,7 @@ export function AuxApp() {
           <span>{real ? "YOUR ROOM" : "DEMO ROOM"}</span>
           <strong>{room.name}</strong>
           <div>
-            {real ? room.code : "Take it for a spin"}
+            {real ? room.code : "Explore the demo"}
             <button
               aria-label="Room settings"
               onClick={() => openDialog("settings")}
@@ -528,7 +528,7 @@ export function AuxApp() {
           onClick={() => openDialog("create")}
         >
           <Plus size={17} />
-          Start a new ride
+          Start a new room
         </button>
         <button className="join-link" onClick={() => openDialog("join")}>
           <Link2 size={15} />
@@ -566,7 +566,7 @@ export function AuxApp() {
             </span>
             <div>
               <b>{me?.name || "You"}</b>
-              <span>{isHost ? "Designated DJ" : "Passenger princess"}</span>
+              <span>{isHost ? "Host" : "Member"}</span>
             </div>
             <button
               aria-label="Open settings"
@@ -600,17 +600,17 @@ export function AuxApp() {
               Your space <span>/</span>{" "}
               <b>
                 {tab === "queue"
-                  ? "The ride"
+                  ? "The room"
                   : tab === "discover"
                     ? "Discover music"
-                    : "The crew"}
+                    : "The people"}
               </b>
             </span>
           </div>
           <div className="topbar-actions">
             <span className="prototype-badge">INTERACTIVE PROTOTYPE</span>
             <button className="text-button" onClick={() => openDialog("join")}>
-              Join a ride
+              Join a room
               <ArrowUp size={14} className="rotate-45" />
             </button>
           </div>
@@ -621,23 +621,23 @@ export function AuxApp() {
               <div className="eyebrow">
                 <span className="live-dot" />
                 {room.ended
-                  ? "RIDE ENDED"
+                  ? "SESSION ENDED"
                   : real
                     ? "ROOM IS LIVE"
                     : "A LITTLE LESS “PASS THE AUX”"}
               </div>
               <h1>
                 {tab === "queue"
-                  ? "Every seat has a say."
+                  ? "Everyone gets a say."
                   : tab === "discover"
                     ? "Find your next favorite."
                     : "Your kind of people."}
               </h1>
               <p>
                 {tab === "queue"
-                  ? "One ride. One queue. A soundtrack made together."
+                  ? "One room. One queue. A soundtrack made together."
                   : tab === "discover"
-                    ? "A little something for every turn in the road."
+                    ? "A little something for every mood and moment."
                     : "Different tastes. One very good soundtrack."}
               </p>
             </div>
@@ -659,9 +659,9 @@ export function AuxApp() {
           {room.ended && (
             <div className="ended-banner">
               <Check size={18} />
-              That was a good ride. Start a new one when you’re ready.
+              This session has ended. Start a new room whenever you’re ready.
               <button onClick={() => openDialog("create")}>
-                New ride
+                New room
                 <ArrowRight size={15} />
               </button>
             </div>
@@ -670,15 +670,15 @@ export function AuxApp() {
             <div className="left-column">
               {tab === "queue" && (
                 <>
-                  <section className="ride-banner" aria-label="Current room">
+                  <section className="room-banner" aria-label="Current room">
                     <div className="banner-grain" />
                     <div className="banner-content">
-                      <div className="roadtrip-tag">
+                      <div className="session-tag">
                         <span />
                         YOUR COLLECTIVE SOUNDTRACK
                       </div>
                       <h2>{room.name}</h2>
-                      <p>Windows down. Volume up. You know the drill.</p>
+                      <p>Good company. Great music. A queue for everyone.</p>
                       <div className="banner-bottom">
                         <div className="avatar-stack">
                           {room.members.slice(0, 4).map((m) => (
@@ -688,8 +688,8 @@ export function AuxApp() {
                           ))}
                         </div>
                         <span>
-                          {room.members.length} in the ride
-                          {!real && " · sample crew"}
+                          {room.members.length} in the room
+                          {!real && " · sample group"}
                         </span>
                         <span className="banner-divider" />
                         <span>
@@ -701,9 +701,9 @@ export function AuxApp() {
                     <div className="banner-sticker">
                       <AudioLines size={24} />
                       <span>
-                        TAKE THE
+                        GOOD MUSIC
                         <br />
-                        LONG WAY
+                        GREAT COMPANY
                       </span>
                       <span className="sticker-star">✳</span>
                     </div>
@@ -712,7 +712,7 @@ export function AuxApp() {
                     <div className="section-heading">
                       <div>
                         <h2>
-                          {live ? "Crew requests" : "Up next"}{" "}
+                          {live ? "Song requests" : "Up next"}{" "}
                           <span className="count-pill">
                             {room.queue.length}
                           </span>
@@ -745,7 +745,9 @@ export function AuxApp() {
                         <div className="empty-state">
                           <ListMusic size={27} />
                           <h3>Your next great song goes here.</h3>
-                          <p>Pick something below and get this ride started.</p>
+                          <p>
+                            Pick something below and get this session started.
+                          </p>
                           <button
                             className="text-button"
                             onClick={() => {
@@ -784,7 +786,7 @@ export function AuxApp() {
                 </>
               )}
               {tab === "people" ? (
-                <section className="crew-section">
+                <section className="members-section">
                   <div className="section-heading">
                     <div>
                       <h2>
@@ -807,9 +809,9 @@ export function AuxApp() {
                       Invite
                     </button>
                   </div>
-                  <div className="crew-grid">
+                  <div className="members-grid">
                     {room.members.map((m) => (
-                      <div key={m.id} className="crew-card">
+                      <div key={m.id} className="member-card">
                         <span
                           className="avatar large"
                           style={{ background: m.color }}
@@ -823,7 +825,7 @@ export function AuxApp() {
                         <p>
                           {m.host
                             ? "Host · keeper of the aux"
-                            : "Passenger · excellent taste"}
+                            : "Member · excellent taste"}
                         </p>
                         <span>
                           {room.queue.filter((q) => q.memberId === m.id).length}{" "}
@@ -852,7 +854,7 @@ export function AuxApp() {
                       <h2>
                         {tab === "discover"
                           ? "The good stuff"
-                          : "Something for the road"}{" "}
+                          : "Something for everyone"}{" "}
                         <Sparkles
                           size={17}
                           className="inline ml-1 text-stone-500"
@@ -890,10 +892,10 @@ export function AuxApp() {
                   </div>
                   <div className="mood-tabs" aria-label="Filter songs by mood">
                     {[
-                      "For your ride",
+                      "For everyone",
                       "Feel good",
-                      "Indie ride",
-                      "Desi detour",
+                      "Indie favorites",
+                      "Desi favorites",
                       "Throwbacks",
                       "After dark",
                     ].map((m) => (
@@ -964,7 +966,7 @@ export function AuxApp() {
                         className="text-button"
                         onClick={() => {
                           setQuery("");
-                          setMood("For your ride");
+                          setMood("For everyone");
                         }}
                       >
                         Reset search
@@ -976,11 +978,11 @@ export function AuxApp() {
                     onClick={() => {
                       setTab(tab === "discover" ? "queue" : "discover");
                       setQuery("");
-                      setMood("For your ride");
+                      setMood("For everyone");
                     }}
                   >
                     {tab === "discover"
-                      ? "Back to the ride"
+                      ? "Back to the room"
                       : "Explore the whole collection"}
                     <ArrowRight size={15} />
                   </button>
@@ -1046,7 +1048,7 @@ export function AuxApp() {
                   <span className="record-caption">
                     {live
                       ? `PLAYBACK BY ${room.provider.toUpperCase()}`
-                      : "SIDE A · THE OPEN ROAD"}
+                      : "SIDE A · SHARED SOUNDTRACK"}
                   </span>
                 </div>
                 <div className="current-track">
@@ -1184,7 +1186,7 @@ export function AuxApp() {
                   <div className="invite-icon">
                     <Users size={20} />
                   </div>
-                  <span className="handwritten">room for more ↘</span>
+                  <span className="handwritten">room for everyone ↘</span>
                 </div>
                 <h2>
                   A good song deserves
@@ -1192,7 +1194,7 @@ export function AuxApp() {
                   good company.
                 </h2>
                 <p>
-                  No app downloads for your crew.
+                  No app downloads for your group.
                   <br />
                   Just a link and a little taste.
                 </p>
@@ -1214,22 +1216,20 @@ export function AuxApp() {
                   </button>
                 )}
               </section>
-              <div className="safety-note">
+              <div className="session-note">
                 <ShieldCheck size={16} />
                 <p>
-                  {isHost
-                    ? "Set the vibe before you drive."
-                    : "Keep the driver’s hands on the wheel."}
+                  {isHost ? "You set the tone." : "Everyone gets a turn."}
                   <br />
-                  <span>Let the passengers handle the queue.</span>
+                  <span>Keep the queue open to everyone.</span>
                 </p>
               </div>
             </aside>
           </div>
           <footer className="page-footer">
-            <span>Made for the way there.</span>
+            <span>Made for listening together.</span>
             <span>
-              LESS PHONE PASSING. MORE SINGING ALONG.
+              MORE VOICES. ONE SHARED SOUNDTRACK.
               <AudioLines size={14} />
             </span>
           </footer>
@@ -1238,8 +1238,8 @@ export function AuxApp() {
       <Modal
         open={dialog === "create"}
         onOpenChange={(o) => !o && setDialog(null)}
-        title="Your ride. Everyone’s soundtrack."
-        description="Create a room, share the link, and let your crew take turns."
+        title="Your room. Everyone’s soundtrack."
+        description="Create a room, share the link, and let everyone take turns."
       >
         <form onSubmit={create} className="form-stack">
           <label>
@@ -1254,13 +1254,13 @@ export function AuxApp() {
             />
           </label>
           <label>
-            Give your ride a name
+            Give your room a name
             <input
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               required
               maxLength={60}
-              placeholder="The scenic route"
+              placeholder="The listening room"
             />
           </label>
           <label className="demo-mode-choice">
@@ -1332,7 +1332,7 @@ export function AuxApp() {
             className="button primary w-full"
             type="submit"
           >
-            {busy ? "Creating your room…" : "Let’s hit the road"}
+            {busy ? "Creating your room…" : "Create room"}
             <ArrowRight size={17} />
           </button>
         </form>
@@ -1341,7 +1341,7 @@ export function AuxApp() {
         open={dialog === "join"}
         onOpenChange={(o) => !o && setDialog(null)}
         title="Hop in. You’re on aux."
-        description="Get the six-character code from your host and join the ride."
+        description="Get the six-character code from your host and join the room."
       >
         <form onSubmit={join} className="form-stack">
           <label>
@@ -1385,7 +1385,7 @@ export function AuxApp() {
             className="button primary w-full"
             type="submit"
           >
-            {busy ? "Joining the ride…" : "Join the ride"}
+            {busy ? "Joining the room…" : "Join the room"}
             <ArrowRight size={17} />
           </button>
           <p className="text-xs text-center text-muted">
@@ -1446,7 +1446,7 @@ export function AuxApp() {
         title="Keep the good vibes going."
         description={
           isHost
-            ? "A few ground rules for a better ride."
+            ? "A few settings for a better shared session."
             : "Your host manages playback and room settings."
         }
       >
@@ -1490,8 +1490,8 @@ export function AuxApp() {
           <span>
             {live
               ? manual
-                ? "The host opens each selected track in the music app and confirms playback. Aux cannot pause or stop that app. Ending this ride only closes the shared queue."
-                : "Aux owns this queue and controls the host’s active Spotify player. Audio stays in Spotify. Ending the ride stops future dispatch; the current song may finish in Spotify."
+                ? "The host opens each selected track in the music app and confirms playback. Aux cannot pause or stop that app. Ending this session only closes the shared queue."
+                : "Aux owns this queue and controls the host’s active Spotify player. Audio stays in Spotify. Ending the session stops future dispatch; the current song may finish in Spotify."
               : "This is a demo room with simulated controls. Start a live room to use a music service."}
           </span>
         </div>
@@ -1505,7 +1505,7 @@ export function AuxApp() {
                 setDialog(null);
               }}
             >
-              End the ride
+              End the session
             </button>
           )}
           <button className="button secondary flex-1" onClick={reset}>
@@ -1524,7 +1524,7 @@ export function AuxApp() {
           {[
             [
               "01",
-              "Start a ride",
+              "Start a room",
               "Pick a playback service and give your room a name.",
             ],
             [
@@ -1550,10 +1550,10 @@ export function AuxApp() {
         <div className="form-note">
           <Music2 size={18} />
           <span>
-            Aux manages queues for eight music services. Spotify supports
-            automatic remote control; the other services use explicit host-led
-            link handoff. Demo rooms are silent. Cross-service song matching is
-            not connected.
+            Aux brings everyone into one shared queue across multiple music
+            services. Playback options depend on the selected app: automatic
+            control where available, or host-led handoff. Demo rooms are silent.
+            Cross-service song matching is not connected.
           </span>
         </div>
         <button

@@ -53,7 +53,7 @@ export function LinkedTrackRequest({
       setTitle("");
       setArtist("");
       request.current = null;
-      toast.success(`Added to the ${room.provider} ride queue`);
+      toast.success(`Added to the ${room.provider} shared queue`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -107,7 +107,7 @@ export function LinkedTrackRequest({
         </label>
         {url && parsed && parsed.provider !== room.provider && (
           <p className="connection-error">
-            This link is from {parsed.provider}. This ride uses {room.provider};
+            This link is from {parsed.provider}. This room uses {room.provider};
             find the same song there before requesting it.
           </p>
         )}
@@ -153,7 +153,7 @@ export function LinkedTrackRequest({
         {locked && (
           <p className="live-search-hint">
             {room.ended
-              ? "This ride has ended."
+              ? "This session has ended."
               : "The host has paused new requests."}
           </p>
         )}

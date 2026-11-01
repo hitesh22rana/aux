@@ -30,7 +30,7 @@ export async function requestLinkedTrack(
     );
   if (link.provider !== room.provider)
     throw new RoomError(
-      `This ride plays through ${room.provider}. Share a song link from that service.`,
+      `This room plays through ${room.provider}. Share a song link from that service.`,
       422,
     );
   const track: Track = {
@@ -56,7 +56,7 @@ export async function prepareHandoff(
   const result = await changeQueue(
     room,
     (state) => {
-      if (state.ended) throw new RoomError("This ride has ended.", 410);
+      if (state.ended) throw new RoomError("This session has ended.", 410);
       if (state.handoff && state.handoff.expiresAt > Date.now()) {
         if (itemId && itemId !== state.handoff.itemId)
           throw new RoomError(
@@ -96,7 +96,7 @@ export async function confirmHandoff(
   await changeQueue(
     room,
     (state) => {
-      if (state.ended) throw new RoomError("This ride has ended.", 410);
+      if (state.ended) throw new RoomError("This session has ended.", 410);
       if (state.lastConfirmedHandoff === id) return;
       const pending = state.handoff;
       if (!pending || pending.id !== id || pending.expiresAt < Date.now())

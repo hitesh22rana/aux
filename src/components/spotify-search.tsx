@@ -199,7 +199,7 @@ export function SpotifySearch({
           <p>
             {query.trim().length >= 2
               ? "Try the title together with the artist."
-              : "Spotify plays the music. Your crew chooses what comes next."}
+              : "Spotify plays the music. Your group chooses what comes next."}
           </p>
         </div>
       )}

@@ -37,7 +37,13 @@ function raw(uri = one) {
 }
 let player: import("../../src/lib/playback/spotify").Player;
 function room() {
-  const data = store.createRoom("Test ride", "Host", "Spotify", false, "live");
+  const data = store.createRoom(
+    "Test session",
+    "Host",
+    "Spotify",
+    false,
+    "live",
+  );
   storage.putTokens(data.room.code, {
     access: "test-only-access",
     refresh: "test-only-refresh",
@@ -540,13 +546,13 @@ describe("Multi-provider host-led playback", () => {
       const handoff = await import("../../src/lib/handoff");
       const defs = await import("../../src/lib/providers");
       const host = store.createRoom(
-        "Service ride",
+        "Service session",
         "Host",
         name,
         false,
         "live",
       );
-      const guest = store.joinRoom(host.room.code, "Passenger");
+      const guest = store.joinRoom(host.room.code, "Member");
       const requestId = randomUUID();
       let view = await handoff.requestLinkedTrack(host.room.code, guest.token, {
         url,
@@ -600,13 +606,13 @@ describe("Multi-provider host-led playback", () => {
   it("protects selected requests and cancels a selection without dequeuing", async () => {
     const handoff = await import("../../src/lib/handoff");
     const host = store.createRoom(
-      "Manual ride",
+      "Manual session",
       "Host",
       "Apple Music",
       false,
       "live",
     );
-    const guest = store.joinRoom(host.room.code, "Passenger");
+    const guest = store.joinRoom(host.room.code, "Member");
     const view = await handoff.requestLinkedTrack(host.room.code, guest.token, {
       url: serviceLinks[0][1],
       title: "Song",
@@ -638,7 +644,7 @@ describe("Multi-provider host-led playback", () => {
   it("rejects expired handoffs, mismatched providers, remote controls and ended-room requests", async () => {
     const handoff = await import("../../src/lib/handoff");
     const host = store.createRoom(
-      "Manual ride",
+      "Manual session",
       "Host",
       "Amazon Music",
       false,

@@ -225,7 +225,7 @@ export async function processRoom(code: string) {
     await changeQueue(
       room,
       (s) => {
-        if (s.ended) throw new RoomError("Ride ended.", 410);
+        if (s.ended) throw new RoomError("Session ended.", 410);
         if (s.operation)
           throw new RoomError("Another command is in progress.", 409);
         if (kind === "start") {

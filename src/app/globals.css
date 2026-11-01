@@ -384,16 +384,16 @@ a {
 .left-column {
   min-width: 0;
 }
-.ride-banner {
+.room-banner {
   min-height: 223px;
   position: relative;
   overflow: hidden;
-  background: #d7c49b url("/art/road.jpg") center 54% / cover;
+  background: #d7c49b url("/art/landscape.jpg") center 54% / cover;
   border-radius: 12px;
   color: #fffaf0;
   isolation: isolate;
 }
-.ride-banner:before {
+.room-banner:before {
   content: "";
   position: absolute;
   inset: 0;
@@ -416,7 +416,7 @@ a {
 .banner-content {
   padding: 26px 26px 24px;
 }
-.roadtrip-tag {
+.session-tag {
   font-size: 7px;
   letter-spacing: 1.7px;
   display: flex;
@@ -424,13 +424,13 @@ a {
   gap: 6px;
   color: #fff8e0b5;
 }
-.roadtrip-tag > span {
+.session-tag > span {
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: #d9eab1;
 }
-.ride-banner h2 {
+.room-banner h2 {
   font-family: Georgia, "Times New Roman", serif;
   font-weight: 400;
   letter-spacing: -1.5px;
@@ -440,7 +440,7 @@ a {
   max-width: 80%;
   overflow-wrap: anywhere;
 }
-.ride-banner p {
+.room-banner p {
   font-size: 10px;
   color: #fff6e1c9;
 }
@@ -1093,7 +1093,7 @@ a {
   letter-spacing: 2px;
   font-weight: 500;
 }
-.safety-note {
+.session-note {
   display: flex;
   align-items: start;
   gap: 8px;
@@ -1102,14 +1102,14 @@ a {
   font-size: 8px;
   line-height: 1.8;
 }
-.safety-note > svg {
+.session-note > svg {
   flex-shrink: 0;
   margin-top: 2px;
 }
-.safety-note p {
+.session-note p {
   color: #8e9880;
 }
-.safety-note span {
+.session-note span {
   color: #acb29f;
 }
 .page-footer {
@@ -1152,12 +1152,12 @@ a {
   font-size: 10px;
   color: #a1a993;
 }
-.crew-grid {
+.members-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
-.crew-card {
+.member-card {
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 10px;
@@ -1169,16 +1169,16 @@ a {
   font-size: 21px;
   margin-bottom: 16px;
 }
-.crew-card h3 {
+.member-card h3 {
   font-size: 15px;
   font-weight: 500;
 }
-.crew-card p {
+.member-card p {
   color: #939b86;
   font-size: 10px;
   margin-top: 6px;
 }
-.crew-card > span:last-child {
+.member-card > span:last-child {
   font-size: 9px;
   display: inline-block;
   padding: 5px 7px;
@@ -1490,13 +1490,13 @@ a {
     grid-template-columns: minmax(0, 1fr) 325px;
     gap: 38px;
   }
-  .ride-banner {
+  .room-banner {
     min-height: 252px;
   }
   .banner-content {
     padding: 30px;
   }
-  .ride-banner h2 {
+  .room-banner h2 {
     font-size: 44px;
     margin-top: 24px;
   }
@@ -1561,7 +1561,7 @@ a {
     width: 65px;
     height: 87px;
   }
-  .ride-banner h2 {
+  .room-banner h2 {
     font-size: 31px;
   }
   .banner-content {
@@ -1642,11 +1642,11 @@ a {
   .current-track p {
     font-size: 9px;
   }
-  .ride-banner h2 {
+  .room-banner h2 {
     max-width: 70%;
     font-size: 29px;
   }
-  .ride-banner p {
+  .room-banner p {
     max-width: 75%;
     line-height: 1.6;
   }
@@ -1715,7 +1715,7 @@ a {
   .little-note {
     font-size: 15px;
   }
-  .safety-note {
+  .session-note {
     padding: 18px 6px;
     font-size: 7px;
   }
@@ -1791,7 +1791,7 @@ a {
   .banner-content {
     padding: 24px;
   }
-  .ride-banner h2 {
+  .room-banner h2 {
     font-size: 32px;
   }
   .section-heading h2 {
@@ -1812,7 +1812,7 @@ a {
   .profile {
     padding-bottom: calc(18px + env(safe-area-inset-bottom));
   }
-  .safety-note {
+  .session-note {
     font-size: 8px;
     padding: 18px 12px;
   }
@@ -1873,13 +1873,13 @@ a {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  .ride-banner {
+  .room-banner {
     min-height: 219px;
   }
   .banner-content {
     padding: 25px 21px;
   }
-  .ride-banner h2 {
+  .room-banner h2 {
     font-size: 34px;
   }
   .banner-sticker {
@@ -1902,7 +1902,7 @@ a {
   .banner-bottom .banner-divider {
     display: block;
   }
-  .ride-banner p {
+  .room-banner p {
     max-width: 85%;
   }
   .queue-row {
@@ -2126,7 +2126,7 @@ a {
     grid-column: 1/-1;
     grid-row: 3;
   }
-  .safety-note {
+  .session-note {
     grid-column: 1/-1;
     padding: 2px 10px;
     justify-content: center;
@@ -2153,13 +2153,13 @@ a {
   .invite-url input {
     font-size: 16px;
   }
-  .crew-grid {
+  .members-grid {
     gap: 12px;
   }
-  .crew-card {
+  .member-card {
     padding: 20px 16px;
   }
-  .crew-card p {
+  .member-card p {
     font-size: 9px;
   }
   .empty-record {

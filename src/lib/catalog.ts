@@ -39,7 +39,7 @@ export const catalog: Track[] = [
     album: "Yeh Jawaani Hai Deewani",
     duration: 228,
     art: "ilahi",
-    mood: "Desi detour",
+    mood: "Desi favorites",
     provider: "JioSaavn",
   },
   {
@@ -49,7 +49,7 @@ export const catalog: Track[] = [
     album: "Currents",
     duration: 216,
     art: "currents",
-    mood: "Indie ride",
+    mood: "Indie favorites",
     provider: "Spotify",
   },
   {
@@ -59,7 +59,7 @@ export const catalog: Track[] = [
     album: "I Love You.",
     duration: 240,
     art: "sweater",
-    mood: "Indie ride",
+    mood: "Indie favorites",
     provider: "YouTube Music",
   },
   {
@@ -79,7 +79,7 @@ export const catalog: Track[] = [
     album: "Zindagi Na Milegi Dobara",
     duration: 251,
     art: "parinday",
-    mood: "Desi detour",
+    mood: "Desi favorites",
     provider: "JioSaavn",
   },
   {
@@ -119,7 +119,7 @@ export const catalog: Track[] = [
     album: "Tamasha",
     duration: 252,
     art: "safar",
-    mood: "Desi detour",
+    mood: "Desi favorites",
     provider: "JioSaavn",
   },
   {
@@ -129,7 +129,7 @@ export const catalog: Track[] = [
     album: "Oracular Spectacular",
     duration: 229,
     art: "electric",
-    mood: "Indie ride",
+    mood: "Indie favorites",
     provider: "Apple Music",
   },
 ];
@@ -189,7 +189,7 @@ export const colors = [
 export function demoRoom(): RoomView {
   return {
     code: "DEMO",
-    name: "The scenic route",
+    name: "The listening room",
     provider: "Spotify",
     members: [
       { id: "you", name: "You", color: colors[0], host: true },

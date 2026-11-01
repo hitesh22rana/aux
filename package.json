@@ -40,5 +40,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.5"
-  }
+  },
+  "description": "Collaborative music sessions with a shared queue across multiple music services."
 }

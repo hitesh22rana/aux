@@ -119,7 +119,7 @@ export function SpotifyConnection({
             ? `Controlling ${device.name}`
             : "Open Spotify on the host’s phone and start a song."
           : host
-            ? "Connect the host account. Your crew only needs Aux."
+            ? "Connect the host account. Your group only needs Aux."
             : "Waiting for the host to connect Spotify."}
       </p>
       {status && !status.configured && host && (

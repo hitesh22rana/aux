@@ -68,7 +68,7 @@ export function HandoffPanel({
       {!host ? (
         <p>Waiting for the host to open the next request.</p>
       ) : room.ended ? (
-        <p>This ride has ended.</p>
+        <p>This session has ended.</p>
       ) : pending && track ? (
         <div className="handoff-selection">
           <span className="eyebrow">SELECTED REQUEST</span>

@@ -32,7 +32,7 @@ export function authorizeLive(
       "This is a demo room. Start a live room to manage playback.",
       409,
     );
-  if (room.ended) throw new RoomError("This ride has ended.", 410);
+  if (room.ended) throw new RoomError("This session has ended.", 410);
   if (host && !member.host)
     throw new RoomError("Only the host can control the player.", 403);
   return { room, member };
@@ -99,7 +99,7 @@ export async function liveCommand(
   await changeQueue(
     room,
     (state) => {
-      if (state.ended) throw new RoomError("This ride has ended.", 410);
+      if (state.ended) throw new RoomError("This session has ended.", 410);
       const item = state.queue.find((q) => q.id === action.itemId);
       if (!item) throw new RoomError("This song is no longer queued.", 404);
       if (action.type === "vote") {

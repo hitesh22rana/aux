@@ -135,7 +135,7 @@ export async function addToQueue(
   await changeQueue(
     room,
     (state) => {
-      if (state.ended) throw new RoomError("This ride has ended.", 410);
+      if (state.ended) throw new RoomError("This session has ended.", 410);
       const prior = state.requests[requestId];
       if (prior) {
         if (prior.member !== member || prior.uri !== track.id)
@@ -144,7 +144,7 @@ export async function addToQueue(
       }
       if (Object.keys(state.requests).length >= 1000)
         throw new RoomError(
-          "This ride has reached its request limit. Start a new room.",
+          "This session has reached its request limit. Start a new room.",
           409,
         );
       if (
@@ -173,7 +173,7 @@ export async function queueControl(room: Room, type: Control["type"]) {
   await changeQueue(
     room,
     (state) => {
-      if (state.ended) throw new RoomError("This ride has ended.", 410);
+      if (state.ended) throw new RoomError("This session has ended.", 410);
       if (type === "recover" && state.operation?.phase === "uncertain")
         state.controls = [];
       if (
