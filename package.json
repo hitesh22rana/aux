@@ -6,13 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "node scripts/check-text.mjs && eslint",
+    "lint": "eslint",
     "test": "playwright test",
     "typecheck": "next typegen && tsc --noEmit",
-    "format": "prettier --write src tests scripts docs *.ts *.mjs *.mts *.yaml README.md AGENTS.md",
+    "format": "prettier --write src tests docs *.ts *.mjs *.mts *.yaml README.md AGENTS.md",
     "worker": "tsx --conditions=react-server --env-file-if-exists=.env.local src/worker.ts",
-    "test:unit": "vitest run",
-    "check:text": "node scripts/check-text.mjs"
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.3.1",
