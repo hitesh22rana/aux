@@ -16,8 +16,8 @@ export function SpotifySearch({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState<string | null>(null);
-  const requestIds = useRef(new Map<string, string>());
-  const inFlight = useRef(false);
+  const requestIdsRef = useRef(new Map<string, string>());
+  const inFlightRef = useRef(false);
   const endpoint = `/api/rooms/${room.code}/spotify`;
   useEffect(() => {
     if (query.trim().length < 2) return;
@@ -48,11 +48,12 @@ export function SpotifySearch({
     };
   }, [query, endpoint]);
   async function request(track: Track) {
-    if (inFlight.current) return;
-    inFlight.current = true;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setPending(track.id);
-    const requestId = requestIds.current.get(track.id) || crypto.randomUUID();
-    requestIds.current.set(track.id, requestId);
+    const requestId =
+      requestIdsRef.current.get(track.id) || crypto.randomUUID();
+    requestIdsRef.current.set(track.id, requestId);
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -62,17 +63,17 @@ export function SpotifySearch({
       const data = await response.json();
       if (!response.ok) {
         if (response.status !== 503 && response.status !== 502)
-          requestIds.current.delete(track.id);
+          requestIdsRef.current.delete(track.id);
         throw new Error(data.error);
       }
       onUpdate(data);
-      requestIds.current.delete(track.id);
+      requestIdsRef.current.delete(track.id);
       toast.success("Added to the Aux queue");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setPending(null);
-      inFlight.current = false;
+      inFlightRef.current = false;
     }
   }
   const results = query.trim().length >= 2 ? tracks : [];

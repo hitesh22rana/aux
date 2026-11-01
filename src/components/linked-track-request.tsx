@@ -17,7 +17,7 @@ export function LinkedTrackRequest({
   const [artist, setArtist] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const request = useRef<{ fingerprint: string; id: string } | null>(null);
+  const requestRef = useRef<{ fingerprint: string; id: string } | null>(null);
   const definition = providerDefinition(room.provider);
   const host = room.members.some((m) => m.id === room.me && m.host);
   const locked = room.ended || (!host && room.locked);
@@ -32,8 +32,8 @@ export function LinkedTrackRequest({
       title.trim(),
       artist.trim(),
     ]);
-    if (request.current?.fingerprint !== fingerprint)
-      request.current = { fingerprint, id: crypto.randomUUID() };
+    if (requestRef.current?.fingerprint !== fingerprint)
+      requestRef.current = { fingerprint, id: crypto.randomUUID() };
     try {
       const response = await fetch(`/api/rooms/${room.code}/handoff`, {
         method: "POST",
@@ -43,7 +43,7 @@ export function LinkedTrackRequest({
           url,
           title,
           artist,
-          requestId: request.current!.id,
+          requestId: requestRef.current!.id,
         }),
       });
       const data = await response.json();
@@ -52,7 +52,7 @@ export function LinkedTrackRequest({
       setUrl("");
       setTitle("");
       setArtist("");
-      request.current = null;
+      requestRef.current = null;
       toast.success(`Added to the ${room.provider} shared queue`);
     } catch (e) {
       setError((e as Error).message);
@@ -107,7 +107,7 @@ export function LinkedTrackRequest({
         </label>
         {url && parsed && parsed.provider !== room.provider && (
           <p className="connection-error">
-            This link is from {parsed.provider}. This room uses {room.provider};
+            This link is from {parsed.provider}. This room uses {room.provider}.
             find the same song there before requesting it.
           </p>
         )}

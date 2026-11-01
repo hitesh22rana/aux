@@ -306,7 +306,9 @@ export async function processRoom(code: string) {
         },
         "",
       );
-    } catch {}
+    } catch {
+      // Keep the original failure if the best-effort status update also fails.
+    }
     return false;
   } finally {
     clearInterval(renewal);

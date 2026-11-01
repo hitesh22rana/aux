@@ -88,7 +88,7 @@ function Art({
           ? "Shared song artwork placeholder"
           : track.url
             ? `${track.album} cover`
-            : `${track.album} — illustrated demo artwork`
+            : `${track.album}  -  illustrated demo artwork`
       }
       className={`album-art ${className}`}
       unoptimized
@@ -145,8 +145,8 @@ export function AuxApp() {
   const [liked, setLiked] = useState(false);
   const [searchMobile, setSearchMobile] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const fetching = useRef(false);
-  const mutationVersion = useRef(0);
+  const fetchingRef = useRef(false);
+  const mutationVersionRef = useRef(0);
   const me = room.members.find((m) => m.id === room.me);
   const isHost = me?.host ?? false;
   const live = real && room.mode === "live";
@@ -218,19 +218,19 @@ export function AuxApp() {
     if (!real || !ready || room.ended) return;
     let stopped = false;
     const refresh = async () => {
-      if (document.hidden || fetching.current) return;
-      fetching.current = true;
-      const version = mutationVersion.current;
+      if (document.hidden || fetchingRef.current) return;
+      fetchingRef.current = true;
+      const version = mutationVersionRef.current;
       try {
         const data = await api(`/api/rooms/${room.code}`);
-        if (!stopped && version === mutationVersion.current) {
+        if (!stopped && version === mutationVersionRef.current) {
           setRoom(data);
           setOffline(false);
         }
       } catch {
         if (!stopped) setOffline(true);
       } finally {
-        fetching.current = false;
+        fetchingRef.current = false;
       }
     };
     const id = setInterval(refresh, 2000);
@@ -247,7 +247,7 @@ export function AuxApp() {
   async function action(a: Action) {
     if (busy || room.ended) return;
     setBusy(true);
-    mutationVersion.current++;
+    mutationVersionRef.current++;
     try {
       if (real) {
         const data = await api(`/api/rooms/${room.code}`, "PATCH", a);
@@ -312,7 +312,7 @@ export function AuxApp() {
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
-      mutationVersion.current++;
+      mutationVersionRef.current++;
       setBusy(false);
     }
   }
@@ -428,7 +428,7 @@ export function AuxApp() {
         </span>
         <ProviderMark provider={track.provider} small />
         <span className="duration">
-          {track.duration ? time(track.duration) : "—"}
+          {track.duration ? time(track.duration) : "-"}
         </span>
         <button
           className={`vote-button ${item.votes.includes(room.me) ? "voted" : ""}`}

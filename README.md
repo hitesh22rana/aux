@@ -1,4 +1,6 @@
-# aux — Everyone gets a say.
+# aux
+
+Everyone gets a say.
 
 A shared music queue for listening together, anywhere. Create a room, invite people with a link or code, and build a soundtrack across multiple music services.
 
@@ -24,7 +26,7 @@ Playback capabilities depend on the selected service. Opening a track link does 
 
 ## Run locally
 
-Requires Node.js 22.13+, npm, and Docker or an existing Redis 7+ server.
+Requires Node.js 26.13.0, npm 12.2.1, and Docker Compose v2 or an existing Redis 8.10.3 server. Use `.nvmrc` to select the project runtime and `npm install --global npm@12.2.1` to select the package manager.
 
 ```sh
 git clone https://github.com/hitesh22rana/aux.git
@@ -44,6 +46,16 @@ npm run worker
 Open **http://127.0.0.1:3000**. The initial demo is silent and works without connecting a music account. Live queues require Redis; automatic playback additionally requires configuring the selected integration. Host-led handoff does not require music-service credentials in Aux.
 
 See the [technical setup guide](docs/SETUP.md) for environment variables, adapter-specific requirements, supported link formats, persistence, and deployment limits.
+
+## Run the complete stack
+
+Copy `.env.example` to `.env.local`, then run:
+
+```sh
+docker compose up --build -d
+```
+
+The `docker-compose.yaml` file runs the web app, playback worker, and a persistent queue service together. Open **http://127.0.0.1:3000**. To stop the stack while keeping data, use `docker compose down` without the volume-removal flag.
 
 ## Built with
 
@@ -66,5 +78,7 @@ The test suites cover queue concurrency, permissions, durable worker delivery, r
 ## Project guides
 
 - [Setup, integration capabilities, and deployment](docs/SETUP.md)
+- [Dependency versions and upgrade policy](docs/DEPENDENCIES.md)
+- [Project contribution guidance](AGENTS.md)
 - [Environment template](.env.example)
-- [Local Redis configuration](compose.yaml)
+- [Local Redis configuration](docker-compose.yaml)

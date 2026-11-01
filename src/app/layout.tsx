@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "aux — Everyone gets a say.",
+  title: "aux | Everyone gets a say.",
   description:
     "One room. One queue. A soundtrack made together. Create a room and build a shared soundtrack across multiple music services.",
   robots: { index: false, follow: false },

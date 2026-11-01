@@ -8,7 +8,7 @@ Built with Next.js App Router, TypeScript, Tailwind CSS 4, Redis Streams, SQLite
 
 ## Start locally
 
-Requires Node.js 22.13+ and Docker (or an existing Redis 7+ server). SQLite uses a native module.
+Requires Node.js 26.13.0 and npm 12.2.1, plus Docker Compose v2 (or an existing Redis 8.10.3 server). SQLite uses a native module.
 
 ```sh
 npm ci
@@ -47,6 +47,24 @@ npm run worker
 ```
 
 Open **http://127.0.0.1:3000**. Use that hostname for OAuth; Spotify does not accept `localhost` callback URIs. Production and phone-accessible callbacks need an HTTPS hostname with an exact matching redirect URI.
+
+## Full Docker stack
+
+```sh
+cp .env.example .env.local
+docker compose up --build -d
+docker compose ps
+```
+
+`docker-compose.yaml` is the only Compose definition. It runs the web app, playback worker, and Redis 8.10.3. Both app processes use the same image, encryption key, Redis connection, queue namespace, and persistent SQLite volume at `/app/data`. Services use runtime values from `.env.local`; credentials are excluded from the image by `.dockerignore`.
+
+The Dockerfile uses Node.js 26.13.0 and npm 12.2.1, builds native dependencies in a separate stage, verifies types, builds Next.js, and removes development packages from the runtime image. Runtime processes run as the non-root `aux` user. The web health check uses `/api/health`; Redis has its own readiness check.
+
+Ports 3000 and 6379 bind to loopback for local use. `AUX_PORT` can change the web port. Put a suitable HTTPS reverse proxy in front of the app for external access, and configure the callback origin to match.
+
+Use `docker compose logs web worker` for startup diagnostics. These logs should not contain secrets. Stop with `docker compose down`; do not add `--volumes` when data must be preserved. Redis and SQLite data live in the `aux-redis` and `aux-data` volumes. Back up existing volumes before major storage upgrades. The previous Redis volume name is preserved when upgrading from the old Compose filename.
+
+For the split host-development workflow, start only Redis with `docker compose up -d redis`, then run `npm run dev` and `npm run worker` locally. Do not also run containerized web/worker processes against a different database while testing the same room.
 
 ## Supported music services
 
@@ -98,7 +116,7 @@ A Spotify account can host one connected Aux room at a time, so separate workers
 - The dispatch intent is persisted **before** the provider command. After a restart, the worker checks Spotify’s observed playback before deciding whether that command completed. It does not automatically resend uncertain commands. The host can inspect Spotify and explicitly recover.
 - Tokens use server-side AES-256-GCM encryption with room-bound authenticated data. Session cookies are HTTP-only; OAuth uses PKCE, expiring one-time state, and host-session binding. Tokens never reach the member browser. Web and worker share the same database and encryption key.
 
-The included Redis service enables **AOF with `appendfsync always`**, a persistent Docker volume, and `noeviction`. Streams alone do not guarantee disk durability. This local, single-node configuration does not provide protection against host/disk loss or a production failover guarantee. Use appropriate managed persistence, backups, TLS/ACLs, and replication for deployment. All queue keys use one Redis hash slot so queue-state and outbox updates remain atomic.
+The Redis 8.10.3 service in `docker-compose.yaml` enables **AOF with `appendfsync always`**, a persistent Docker volume, and `noeviction`. Streams alone do not guarantee disk durability. This local, single-node configuration does not provide protection against host/disk loss or a production failover guarantee. Use appropriate managed persistence, backups, TLS/ACLs, and replication for deployment. All queue keys use one Redis hash slot so queue-state and outbox updates remain atomic.
 
 Queue delivery is at-least-once internally. Spotify offers no external idempotency key for playback commands, so this integration does **not** claim exactly-once external effects. The explicit uncertain state prevents blind replay.
 
@@ -106,7 +124,7 @@ Queue delivery is at-least-once internally. Spotify offers no external idempoten
 
 - **No audio is streamed, proxied, downloaded, or decoded by Aux.** The adapter uses Spotify search, track lookup, playback state, and single-track start/pause/resume endpoints. It does not call Spotify’s native queue endpoint.
 - Pending requests can be removed or reordered in Aux. A Spotify request is briefly locked while being dispatched. A handoff request is locked while selected and is consumed only on host confirmation.
-- Votes express preference; they do not automatically reorder the queue. Each person may have up to three pending requests. In handoff rooms, confirmation—not opening the link—consumes the queued request. Rooms fit 12 members and expire after 24 hours.
+- Votes express preference; they do not automatically reorder the queue. Each person may have up to three pending requests. In handoff rooms, a queued request is consumed only after host confirmation. Rooms fit 12 members and expire after 24 hours.
 - The worker advances when observed playback indicates a track finished near its expected end. Spotify has no completion webhook in this flow: polling is approximate, transitions may have gaps, and pausing near a song’s end is inherently ambiguous. Mid-song manual changes pause Aux automation instead of overriding the host. Use the host controls to continue.
 - If Redis is unavailable, live operations fail rather than accepting requests into temporary memory. If the worker is offline, already accepted requests remain saved and the UI reports its status. Keep the worker supervised in deployment.
 - Ending or disconnecting stops future Aux dispatches; it does not clear Spotify’s existing context or necessarily stop an in-flight/current song. Leaving the browser view does not end the room.
@@ -131,17 +149,17 @@ Real Spotify authentication and external-app playback still need verification wi
 
 ## Source map
 
-- `src/lib/live-queue.ts`, `redis.ts` — durable queue, atomic updates, stream outbox.
-- `src/lib/queue-worker.ts`, `src/worker.ts` — consumer groups, leases, recovery, and playback scheduling.
-- `src/lib/playback/spotify.ts` — provider adapter, token refresh, normalized catalog data.
-- `src/lib/spotify-storage.ts` — encrypted tokens and one-time OAuth state.
-- `src/lib/orchestrator.ts` — queue authorization and provider-independent room actions.
-- `src/app/api/rooms/[code]/spotify/`, `src/app/api/spotify/callback/` — connection, search, request, recovery, and OAuth routes.
-- `src/components/spotify-*.tsx` — automatic Spotify connection and search.
-- `src/lib/providers.ts` — eight-service capability registry, service search links, and safe song-link parser.
-- `src/lib/handoff.ts`, `src/app/api/rooms/[code]/handoff/` — durable selection, cancellation, host confirmation, and manual completion.
-- `src/components/handoff-panel.tsx`, `linked-track-request.tsx` — host-led playback and multi-service link requests.
-- `compose.yaml`, `.env.example` — local infrastructure and environment setup.
+- `src/lib/live-queue.ts`, `redis.ts` - durable queue, atomic updates, stream outbox.
+- `src/lib/queue-worker.ts`, `src/worker.ts` - consumer groups, leases, recovery, and playback scheduling.
+- `src/lib/playback/spotify.ts` - provider adapter, token refresh, normalized catalog data.
+- `src/lib/spotify-storage.ts` - encrypted tokens and one-time OAuth state.
+- `src/lib/orchestrator.ts` - queue authorization and provider-independent room actions.
+- `src/app/api/rooms/[code]/spotify/`, `src/app/api/spotify/callback/` - connection, search, request, recovery, and OAuth routes.
+- `src/components/spotify-*.tsx` - automatic Spotify connection and search.
+- `src/lib/providers.ts` - eight-service capability registry, service search links, and safe song-link parser.
+- `src/lib/handoff.ts`, `src/app/api/rooms/[code]/handoff/` - durable selection, cancellation, host confirmation, and manual completion.
+- `src/components/handoff-panel.tsx`, `linked-track-request.tsx` - host-led playback and multi-service link requests.
+- `docker-compose.yaml`, `.env.example` - local infrastructure and environment setup.
 
 ## References and assets
 
