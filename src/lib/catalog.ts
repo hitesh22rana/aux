@@ -1,0 +1,219 @@
+import type { Provider } from "./providers";
+export { providers, type Provider } from "./providers";
+export type Track = {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  art: string;
+  mood: string;
+  provider: Provider;
+  url?: string;
+};
+export const catalog: Track[] = [
+  {
+    id: "golden",
+    title: "Golden",
+    artist: "Harry Styles",
+    album: "Fine Line",
+    duration: 208,
+    art: "golden",
+    mood: "Feel good",
+    provider: "Spotify",
+  },
+  {
+    id: "sunflower",
+    title: "Sunflower",
+    artist: "Post Malone, Swae Lee",
+    album: "Spider-Man: Into the Spider-Verse",
+    duration: 158,
+    art: "sunflower",
+    mood: "Feel good",
+    provider: "Apple Music",
+  },
+  {
+    id: "ilahi",
+    title: "Ilahi",
+    artist: "Arijit Singh",
+    album: "Yeh Jawaani Hai Deewani",
+    duration: 228,
+    art: "ilahi",
+    mood: "Desi detour",
+    provider: "JioSaavn",
+  },
+  {
+    id: "less",
+    title: "The Less I Know The Better",
+    artist: "Tame Impala",
+    album: "Currents",
+    duration: 216,
+    art: "currents",
+    mood: "Indie ride",
+    provider: "Spotify",
+  },
+  {
+    id: "sweater",
+    title: "Sweater Weather",
+    artist: "The Neighbourhood",
+    album: "I Love You.",
+    duration: 240,
+    art: "sweater",
+    mood: "Indie ride",
+    provider: "YouTube Music",
+  },
+  {
+    id: "dreams",
+    title: "Dreams",
+    artist: "Fleetwood Mac",
+    album: "Rumours",
+    duration: 257,
+    art: "dreams",
+    mood: "Throwbacks",
+    provider: "Apple Music",
+  },
+  {
+    id: "khwabon",
+    title: "Khaabon Ke Parinday",
+    artist: "Alyssa Mendonsa, Mohit Chauhan",
+    album: "Zindagi Na Milegi Dobara",
+    duration: 251,
+    art: "parinday",
+    mood: "Desi detour",
+    provider: "JioSaavn",
+  },
+  {
+    id: "blinding",
+    title: "Blinding Lights",
+    artist: "The Weeknd",
+    album: "After Hours",
+    duration: 200,
+    art: "lights",
+    mood: "After dark",
+    provider: "Spotify",
+  },
+  {
+    id: "night",
+    title: "Night Changes",
+    artist: "One Direction",
+    album: "FOUR",
+    duration: 226,
+    art: "night",
+    mood: "Throwbacks",
+    provider: "YouTube Music",
+  },
+  {
+    id: "heat",
+    title: "Heat Waves",
+    artist: "Glass Animals",
+    album: "Dreamland",
+    duration: 239,
+    art: "heat",
+    mood: "After dark",
+    provider: "Spotify",
+  },
+  {
+    id: "safar",
+    title: "Safarnama",
+    artist: "Lucky Ali",
+    album: "Tamasha",
+    duration: 252,
+    art: "safar",
+    mood: "Desi detour",
+    provider: "JioSaavn",
+  },
+  {
+    id: "electric",
+    title: "Electric Feel",
+    artist: "MGMT",
+    album: "Oracular Spectacular",
+    duration: 229,
+    art: "electric",
+    mood: "Indie ride",
+    provider: "Apple Music",
+  },
+];
+export type Member = { id: string; name: string; color: string; host: boolean };
+export type QueueItem = {
+  id: string;
+  trackId: string;
+  memberId: string;
+  votes: string[];
+  delivery?: "sending" | "sent" | "failed" | "uncertain";
+  deliveryMessage?: string;
+};
+export type PlaybackStatus = {
+  connected: boolean;
+  device: { id: string; name: string; restricted: boolean } | null;
+  syncedAt: number;
+  error?: string;
+};
+export type Room = {
+  mode?: "demo" | "live";
+  tracks?: Record<string, Track>;
+  playback?: PlaybackStatus;
+  code: string;
+  name: string;
+  provider: Provider;
+  members: Member[];
+  queue: QueueItem[];
+  current: string | null;
+  playing: boolean;
+  position: number;
+  startedAt: number | null;
+  locked: boolean;
+  ended: boolean;
+  createdAt: number;
+};
+export type RoomView = Room & {
+  me: string;
+  orchestration?: {
+    workerOnline: boolean;
+    automatic: boolean;
+    uncertain: boolean;
+    activeRequestId?: string;
+    inFlightId?: string;
+    control?: "remote" | "handoff";
+    handoff?: { id: string; itemId: string; expiresAt: number };
+    hostConfirmed?: boolean;
+  };
+};
+export const colors = [
+  "#dfedb3",
+  "#f2c1a7",
+  "#c9c5e6",
+  "#b9d5dc",
+  "#e8cb80",
+  "#d8c2b7",
+];
+export function demoRoom(): RoomView {
+  return {
+    code: "DEMO",
+    name: "The scenic route",
+    provider: "Spotify",
+    members: [
+      { id: "you", name: "You", color: colors[0], host: true },
+      { id: "maya", name: "Maya", color: colors[1], host: false },
+      { id: "arjun", name: "Arjun", color: colors[2], host: false },
+      { id: "sam", name: "Sam", color: colors[3], host: false },
+    ],
+    queue: ["sunflower", "ilahi", "less"].map((trackId, i) => ({
+      id: `demo-${i}`,
+      trackId,
+      memberId: ["maya", "arjun", "sam"][i],
+      votes: i === 0 ? ["arjun", "sam"] : [],
+    })),
+    current: "golden",
+    playing: false,
+    position: 72,
+    startedAt: null,
+    locked: false,
+    ended: false,
+    createdAt: Date.now(),
+    me: "you",
+  };
+}
+export const trackById = (id: string | null) =>
+  catalog.find((t) => t.id === id);
+export const time = (seconds: number) =>
+  `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
