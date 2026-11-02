@@ -1,5 +1,6 @@
 "use client";
 import { RoomHeader, RoomHeading, type RoomTab } from "./room-layout";
+import { RoomModal } from "./dialogs/room-modal";
 import { RoomEntryLoader } from "./room-entry-loader";
 import { RoomLanding } from "./room-landing";
 import { RoomWorkspace } from "./room-workspace";
@@ -35,6 +36,7 @@ export function ListeningRoom({
     busy: sessionBusy,
     offline,
     entryError,
+    clearEntryError,
     isHost,
     live,
     manual,
@@ -51,6 +53,7 @@ export function ListeningRoom({
     if (value.type === "next") setLiked(false);
   }
   function openDialog(value: Dialog) {
+    clearEntryError();
     setMenu(false);
     setDialog(value);
   }
@@ -72,7 +75,6 @@ export function ListeningRoom({
       ) : !real ? (
         <RoomLanding
           ready={ready}
-          error={entryError}
           onCreate={() => openDialog("create")}
           onJoin={() => openDialog("join")}
           onAbout={() => openDialog("about")}
@@ -146,32 +148,59 @@ export function ListeningRoom({
           </div>
         </>
       )}
-      <RoomDialogs
-        key={`${dialog ?? "closed"}:${joinCode}`}
-        dialog={dialog}
-        onDialogChange={setDialog}
-        initialJoinCode={joinCode}
-        room={room}
-        real={real}
-        ready={ready}
-        isHost={isHost}
-        live={live}
-        manual={manual}
-        sessionBusy={busy}
-        onRoomReady={setActiveRoom}
-        onAction={action}
-        onResume={(code) => {
-          setDialog(null);
-          void openRoom(code);
-        }}
-        onLeave={async () => {
-          if (await leaveSession()) {
-            reset();
-            return true;
-          }
-          return false;
-        }}
-      />
+      {!real && !resolving && entryError && (
+        <RoomModal
+          onClose={() => {
+            setDialog(null);
+            clearEntryError();
+          }}
+          title="Room unavailable"
+          description={entryError}
+        >
+          <div className="recovery-actions">
+            <button
+              className="button primary"
+              onClick={() => openDialog("create")}
+            >
+              Create a room
+            </button>
+            <button
+              className="button secondary"
+              onClick={() => openDialog("join")}
+            >
+              Join a room
+            </button>
+          </div>
+        </RoomModal>
+      )}
+      {!entryError && (
+        <RoomDialogs
+          key={`${dialog ?? "closed"}:${joinCode}`}
+          dialog={dialog}
+          onDialogChange={setDialog}
+          initialJoinCode={joinCode}
+          room={room}
+          real={real}
+          ready={ready}
+          isHost={isHost}
+          live={live}
+          manual={manual}
+          sessionBusy={busy}
+          onRoomReady={setActiveRoom}
+          onAction={action}
+          onResume={(code) => {
+            setDialog(null);
+            void openRoom(code);
+          }}
+          onLeave={async () => {
+            if (await leaveSession()) {
+              reset();
+              return true;
+            }
+            return false;
+          }}
+        />
+      )}
     </div>
   );
 }

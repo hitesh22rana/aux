@@ -1,0 +1,23 @@
+.group {
+  display: flex;
+  align-items: center;
+  padding-inline-start: 8px;
+  isolation: isolate;
+}
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  margin-inline-start: -8px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--raised);
+}
+.count {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 550;
+}

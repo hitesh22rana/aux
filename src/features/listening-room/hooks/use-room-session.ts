@@ -246,6 +246,7 @@ export function useRoomSession(
     busy,
     offline,
     entryError,
+    clearEntryError: () => setEntryError(""),
     isHost,
     live,
     manual,

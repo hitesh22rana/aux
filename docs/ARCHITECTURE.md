@@ -107,7 +107,7 @@ The header has one Room settings entry, visible on desktop and mobile. Queue and
 
 The root URL always opens the landing page. Room restoration requires an explicit `?room=CODE` query; a previously stored room code never redirects a home visit. The home wordmark clears the active browser view without ending the shared session. A member can reopen an active room through its invitation URL. Valid six-character invitation URLs render a dedicated loading state from the initial server response, without flashing the landing page. The room appears after validation; missing, closed, invalid, or failed invitations return to the home URL.
 
-An explicit invitation opens the join dialog only when the API returns HTTP 401. Closed rooms return HTTP 410; invalid or expired invitations show a message on the landing page. Connectivity failures show a retry message rather than opening a form. The HTTP client retains response status in `HttpError` so navigation does not infer status from message text.
+An explicit invitation opens the join dialog only when the API returns HTTP 401. Closed rooms return HTTP 410; invalid or expired invitations show a recovery dialog over the landing page. Connectivity failures show a retry message rather than opening a form. The HTTP client retains response status in `HttpError` so navigation does not infer status from message text.
 
 The root HTML element uses `suppressHydrationWarning` only for attributes injected by browser extensions such as LanguageTool. Hydration validation remains enabled for body content and application components.
 
@@ -177,3 +177,12 @@ frame-denial and referrer-policy headers; API responses are private and not cach
 These controls are defense in depth, not proof that every possible exploit is
 impossible. The deployment proxy must replace forwarded host headers, enforce HTTPS,
 and apply request timeouts and abuse/rate controls before exposing the app publicly.
+
+The room-unavailable recovery modal offers explicit Create and Join actions and
+can be dismissed to return home. It also supersedes an open room dialog after a
+membership is revoked. Dismissal clears the entry error, preventing it from
+reopening while interacting with the landing page. Authentication-required valid
+invitations still open the existing Join form. Avatar groups follow the overlapping
+AvatarGroup/AvatarGroupCount pattern from the shadcn Base Avatar documentation,
+using local Blobatar images rather than adding another image-loading primitive.
+Presence dots remain accessible beside names; group totals include Away members.

@@ -44,4 +44,12 @@ Code entry and invitation display use six equal grid columns across their contai
 
 Settings and room notes do not advertise or impose a per-person song cap. The remaining queue-order explanation describes behavior without suggesting a personal request cap.
 
-Input focus uses a softly faded amber border and low-opacity halo instead of a separated hard outline. Navigation reads room, Discover music and people, with the theme toggle after Room settings. Notifications enter at the top. Share surfaces show remaining room hours and minutes.
+Input focus uses a softly faded amber border and low-opacity halo instead of a separated hard outline. Navigation reads Room, Discover music and People, with the theme toggle after Room settings. Notifications enter at the top. Share surfaces show remaining room hours and minutes.
+
+Unavailable invitations return to the homepage and open a dismissible Room unavailable
+dialog with Create a room and Join a room actions. The error does not take over the
+landing hero. The room summary uses a shadcn-style overlapping Blobatar group with
+up to three faces and a +N overflow badge instead of a membership sentence. The
+Room is live label is omitted. Pastel presence dots sit beside names, with a filled
+green online indicator and a hollow warm away indicator. The invite card places its
+code and remaining time together in one compact metadata row.

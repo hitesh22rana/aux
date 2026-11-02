@@ -1,7 +1,7 @@
 "use client";
 import { RoomTimeRemaining } from "./room-time-remaining";
 import Link from "next/link";
-import { MemberAvatar } from "@/shared/ui/member-avatar";
+import { MemberAvatarGroup } from "@/shared/ui/member-avatar-group";
 import { ThemeToggle } from "@/shared/theme/theme-toggle";
 import {
   ArrowDown,
@@ -58,9 +58,9 @@ export function RoomHeader({
         >
           {(
             [
-              ["queue", "room", Radio],
+              ["queue", "Room", Radio],
               ["discover", "Discover music", Disc3],
-              ["people", "people", Users],
+              ["people", "People", Users],
             ] as const
           ).map(([value, label, Icon]) => (
             <button
@@ -127,7 +127,7 @@ export function RoomHeading({
             ? room.name
             : tab === "discover"
               ? "Discover music"
-              : "people"}
+              : "People"}
         </h1>
         <p>
           {tab === "queue"
@@ -188,36 +188,17 @@ export function MobilePlayerSummary({
     </button>
   );
 }
-export function RoomSummary({ room, real }: { room: RoomView; real: boolean }) {
+export function RoomSummary({ room }: { room: RoomView }) {
   return (
     <section className="room-summary" aria-label="Current room">
-      <div className="room-members">
-        <div className="avatar-stack">
-          {room.members
-            .filter((member) => !member.leftAt)
-            .slice(0, 4)
-            .map((member) => (
-              <span key={member.id}>
-                <MemberAvatar name={member.name} size={24} />
-              </span>
-            ))}
-        </div>
-        <span>
-          {room.members.filter((member) => !member.leftAt).length} in the room
-        </span>
-      </div>
+      <MemberAvatarGroup
+        members={room.members.filter((member) => !member.leftAt)}
+      />
       <div className="summary-detail">
         <Headphones size={15} />
         <span>{room.provider}</span>
       </div>
-      <span className="summary-status">
-        <span className={`live-dot ${room.ended ? "paused" : ""}`} />
-        {room.ended
-          ? "Session ended"
-          : real
-            ? "Room is live"
-            : "Create a room to begin"}
-      </span>
+      {room.ended && <span className="summary-status">Session ended</span>}
     </section>
   );
 }
@@ -243,15 +224,23 @@ export function RoomInviteCard({
         <ArrowRight size={15} />
       </button>
       {real && (
-        <button className="room-code" onClick={() => openDialog("invite")}>
-          Room code <b>{room.code}</b>
-          <Copy size={14} />
-        </button>
-      )}
-      {real && (
-        <p className="room-time">
-          <RoomTimeRemaining createdAt={room.createdAt} ended={room.ended} />
-        </p>
+        <div className="invite-meta">
+          <button
+            className="room-code"
+            onClick={() => openDialog("invite")}
+            aria-label={`Room code ${room.code}. Copy or share invite`}
+          >
+            <span>Room code</span> <b>{room.code}</b>
+            <Copy size={12} />
+          </button>
+          <span className="room-time">
+            <RoomTimeRemaining
+              createdAt={room.createdAt}
+              ended={room.ended}
+              compact
+            />
+          </span>
+        </div>
       )}
     </section>
   );

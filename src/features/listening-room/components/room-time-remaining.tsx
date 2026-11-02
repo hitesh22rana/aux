@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 export function RoomTimeRemaining({
   createdAt,
   ended,
+  compact = false,
 }: {
   createdAt: number;
   ended: boolean;
+  compact?: boolean;
 }) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -20,7 +22,8 @@ export function RoomTimeRemaining({
     };
   }, []);
   if (ended) return <span>Session ended</span>;
-  if (now === null) return <span>Checking room time…</span>;
+  if (now === null)
+    return <span>{compact ? "Checking time…" : "Checking room time…"}</span>;
   const minutes = Math.max(0, Math.ceil((createdAt + 86400000 - now) / 60000));
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
@@ -28,7 +31,7 @@ export function RoomTimeRemaining({
     <span>
       {minutes === 0
         ? "Room expired"
-        : `Room expires in ${hours ? `${hours}h ` : ""}${remaining}m`}
+        : `${compact ? "Expires in" : "Room expires in"} ${hours ? `${hours}h ` : ""}${remaining}m`}
     </span>
   );
 }

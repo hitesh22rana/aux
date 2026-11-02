@@ -40,17 +40,19 @@ export function RoomMembers({
           <article key={member.id} className="member-card">
             <div className="member-avatar-wrap">
               <MemberAvatar name={member.name} size={56} />
-              <span
-                className={`member-status-dot ${member.active ? "active" : "away"}`}
-                role="img"
-                aria-label={member.active ? "Active now" : "Away"}
-              />
             </div>
             <div className="member-details">
-              <h3 title={member.name}>
-                {member.name}
-                {member.id === room.me ? " (you)" : ""}
-              </h3>
+              <div className="member-name-row">
+                <h3 title={member.name}>
+                  {member.name}
+                  {member.id === room.me ? " (you)" : ""}
+                </h3>
+                <span
+                  className={`member-status-dot ${member.active ? "active" : "away"}`}
+                  role="img"
+                  aria-label={member.active ? "Active now" : "Away"}
+                />
+              </div>
               <p>{member.host ? "Host" : "Member"}</p>
               <span>
                 {

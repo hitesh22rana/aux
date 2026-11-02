@@ -69,7 +69,7 @@ export function RoomWorkspace({
         )}
         {tab === "queue" && (
           <>
-            <RoomSummary room={room} real />
+            <RoomSummary room={room} />
             <RoomQueue
               room={room}
               live

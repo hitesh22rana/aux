@@ -219,22 +219,6 @@
     gap: 10px;
     font-size: 12px;
   }
-  :global(.avatar-stack) {
-    display: flex;
-    padding-left: 5px;
-  }
-  :global(.avatar-stack) span {
-    width: 30px;
-    height: 30px;
-    border: 3px solid var(--paper);
-    border-radius: 50%;
-    margin-left: -5px;
-    display: grid;
-    place-items: center;
-    color: #262626;
-    font-size: 11px;
-    font-weight: 600;
-  }
   :global(.summary-detail),
   :global(.summary-status) {
     display: flex;
@@ -687,20 +671,28 @@
     color: var(--muted);
     margin: 8px 0 18px;
   }
-  :global(.room-code) {
+  :global(.invite-meta) {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    margin-top: 12px;
-    padding: 8px;
-    font-size: 12px;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
     color: var(--muted);
+    font-size: 11px;
+  }
+  :global(.room-code) {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 0;
+    min-width: 0;
+    font-size: inherit;
+    color: inherit;
+    white-space: nowrap;
   }
   :global(.room-code) b {
     font-weight: 500;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     color: var(--ink);
   }
   :global(.session-note) {
@@ -750,18 +742,26 @@
     width: 56px;
     height: 56px;
   }
+  :global(.member-name-row) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  :global(.member-name-row) h3 {
+    min-width: 0;
+  }
   :global(.member-status-dot) {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 12px;
-    height: 12px;
-    border: 3px solid var(--paper);
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--presence-away);
     border-radius: 50%;
-    background: var(--faint);
+    background: transparent;
   }
   :global(.member-status-dot.active) {
-    background: var(--positive);
+    border-color: color-mix(in srgb, var(--presence-online) 75%, var(--ink));
+    background: var(--presence-online);
   }
   :global(.member-details) {
     min-width: 0;
@@ -796,10 +796,18 @@
     gap: 12px;
   }
   :global(.room-time) {
-    margin-top: 12px;
-    font-size: 12px;
-    text-align: center;
+    font-size: inherit;
     color: var(--muted);
+    white-space: nowrap;
+  }
+  :global(.recovery-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  :global(.recovery-actions) > button {
+    flex: 1;
+    white-space: nowrap;
   }
   :global(.connection-warning),
   :global(.ended-banner) {

@@ -7,7 +7,6 @@ import styles from "./room-landing.module.css";
 
 interface RoomLandingProps {
   ready: boolean;
-  error: string;
   onCreate: () => void;
   onJoin: () => void;
   onAbout: () => void;
@@ -16,7 +15,6 @@ interface RoomLandingProps {
 
 export function RoomLanding({
   ready,
-  error,
   onCreate,
   onJoin,
   onAbout,
@@ -51,11 +49,6 @@ export function RoomLanding({
               A shared music queue for your people. Everyone brings a song. You
               make the soundtrack.
             </p>
-            {error && (
-              <p className={styles.notice} role="alert">
-                {error}
-              </p>
-            )}
             <div className={styles.actions}>
               <div className={styles.actionButtons}>
                 <button

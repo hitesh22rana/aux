@@ -117,9 +117,9 @@ test("mobile room has real empty states, one settings entry and working navigati
   await page.getByRole("button", { name: "Close dialog" }).click();
   await addSong(page, "Mobile song");
   await page.getByRole("button", { name: "Open navigation" }).click();
-  await page.getByRole("button", { name: "people", exact: false }).click();
+  await page.getByRole("button", { name: "People", exact: false }).click();
   await expect(
-    page.getByRole("heading", { name: "people", exact: true }),
+    page.getByRole("heading", { name: "People", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -614,31 +614,35 @@ test("home ignores saved rooms and the home link leaves an active room", async (
   ).toHaveCount(0);
 });
 
-test("closed and invalid invitation links show the landing page without opening a form", async ({
+test("unavailable invitations offer create and join recovery dialogs", async ({
   page,
 }) => {
   const code = await createRoom(page);
-  const ended = await page.request.patch(`/api/rooms/${code}`, {
-    data: { type: "end" },
-  });
-  expect(ended.ok()).toBe(true);
+  expect(
+    (
+      await page.request.patch(`/api/rooms/${code}`, { data: { type: "end" } })
+    ).ok(),
+  ).toBe(true);
   await page.goto(`/?room=${code}`);
-  await expect(
-    page.getByRole("alert").filter({ hasText: "no longer available" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Pass the aux." }),
-  ).toBeVisible();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Room settings", exact: true }),
-  ).toHaveCount(0);
+  const recovery = page.getByRole("dialog", { name: "Room unavailable" });
+  await expect(recovery).toBeVisible();
   await expect(page).toHaveURL("http://127.0.0.1:3000/");
-  await page.goto("/?room=invalid");
+  await recovery
+    .getByRole("button", { name: "Create a room", exact: true })
+    .click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "no longer available" }),
+    page.getByRole("button", { name: "Create room", exact: true }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.goto("/?room=invalid");
+  await expect(recovery).toBeVisible();
+  await recovery
+    .getByRole("button", { name: "Join a room", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Join the room", exact: true }),
+  ).toBeVisible();
 });
 
 test("extension-added root attributes do not cause hydration warnings", async ({
@@ -781,7 +785,7 @@ test("closing the last tab marks a retained membership away", async ({
         ?.active;
     })
     .toBe(false);
-  await h.getByRole("button", { name: /people/ }).click();
+  await h.getByRole("button", { name: /People/ }).click();
   await expect(
     h
       .locator(".member-card")

@@ -29,6 +29,8 @@
   --highlight: #282217;
   --highlight-ink: #e7c592;
   --positive: #b9dba4;
+  --presence-online: #9ae6b4;
+  --presence-away: #e9c89d;
   --landing-ink: #f5f5f5;
   --landing-ground: #0b0b0a;
   --landing-accent: #e9bb62;
@@ -56,6 +58,8 @@
   --highlight: #f3e8d5;
   --highlight-ink: #78501c;
   --positive: #396722;
+  --presence-online: #61ac85;
+  --presence-away: #ba8848;
   --landing-ink: #171717;
   --landing-ground: #fafafa;
   --landing-accent: #e9bb62;

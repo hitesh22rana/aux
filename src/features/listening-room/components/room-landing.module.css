@@ -149,13 +149,6 @@
   color: var(--landing-muted);
   font-size: 13px;
 }
-.notice {
-  margin-top: 20px;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--landing-accent);
-  max-width: 36ch;
-}
 @media (max-width: 760px) {
   .header {
     min-height: 72px;
