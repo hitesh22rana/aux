@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { redis } from "@/server/redis/connection";
 import { queueKeys } from "@/features/listening-room/server/queue-keys";
 import { z } from "zod";
+import { parseUrl } from "@/shared/lib/url";
 import { AppError } from "@/shared/lib/errors";
 import {
   getTokens,
@@ -23,8 +24,9 @@ export function spotifyConfig() {
       "Spotify needs server setup: SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI, and AUX_TOKEN_ENCRYPTION_KEY. See the setup guide.",
       503,
     );
-  const uri = new URL(redirect);
+  const uri = parseUrl(redirect);
   if (
+    !uri ||
     uri.pathname !== "/api/spotify/callback" ||
     uri.search ||
     uri.hash ||
@@ -76,11 +78,10 @@ export async function requestTokens(
       401,
     );
   const token = tokenSchema.parse(await response.json());
+  const grantedScopes = new Set(token.scope?.split(" "));
   if (
     token.scope &&
-    !spotifyScopes
-      .split(" ")
-      .every((scope) => token.scope!.split(" ").includes(scope))
+    !spotifyScopes.split(" ").every((scope) => grantedScopes.has(scope))
   )
     throw new SpotifyError(
       "Spotify did not grant playback permissions. Reconnect and allow playback control.",

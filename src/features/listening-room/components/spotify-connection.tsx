@@ -1,5 +1,4 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
 import {
   ExternalLink,
   Link2,
@@ -7,16 +6,9 @@ import {
   Unplug,
   Headphones,
 } from "lucide-react";
-import { toast } from "sonner";
-import { z } from "zod";
-import { requestJson, errorMessage } from "@/shared/api/http-client";
-import {
-  roomViewSchema,
-  connectionStatusSchema,
-} from "@/features/listening-room/model/contracts";
-const connectResponseSchema = z.object({ url: z.url() });
-const disconnectResponseSchema = z.object({ connected: z.literal(false) });
-import type { RoomView } from "@/features/listening-room/model/catalog";
+import type { RoomView } from "../model/contracts";
+import { useSpotifyConnection } from "../hooks/use-spotify-connection";
+type ConnectionState = ReturnType<typeof useSpotifyConnection>;
 export function SpotifyConnection({
   room,
   onSync,
@@ -24,96 +16,8 @@ export function SpotifyConnection({
   room: RoomView;
   onSync: (room: RoomView) => void;
 }) {
-  const host = room.members.some((m) => m.id === room.me && m.host);
-  const [status, setStatus] = useState<{
-    configured: boolean;
-    connected: boolean;
-    workerOnline?: boolean;
-  } | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const endpoint = `/api/rooms/${room.code}/spotify`;
-  const refresh = useCallback(
-    async (signal?: AbortSignal) => {
-      try {
-        const data = await requestJson(endpoint, connectionStatusSchema, {
-          signal,
-        });
-        setStatus(data);
-        if (data.connected && host && !room.ended) {
-          const value = await requestJson(endpoint, roomViewSchema, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "sync" }),
-            signal,
-          });
-          onSync(value);
-        }
-        setError("");
-      } catch (e) {
-        if (!signal?.aborted)
-          setError(errorMessage(e) || "Couldn’t reach Spotify.");
-      }
-    },
-    [endpoint, host, onSync, room.ended],
-  );
-  useEffect(() => {
-    const controller = new AbortController();
-    let running = false;
-    const tick = async () => {
-      if (document.hidden || running) return;
-      running = true;
-      try {
-        await refresh(controller.signal);
-      } finally {
-        running = false;
-      }
-    };
-    void tick();
-    const timer = setInterval(tick, 7000);
-    return () => {
-      controller.abort();
-      clearInterval(timer);
-    };
-  }, [refresh]);
-  async function command(type: "connect" | "disconnect" | "recover" | "next") {
-    setBusy(true);
-    setError("");
-    try {
-      const options = { method: "POST", body: JSON.stringify({ type }) };
-      if (type === "connect") {
-        const data = await requestJson(
-          endpoint,
-          connectResponseSchema,
-          options,
-        );
-        window.location.assign(data.url);
-        return;
-      }
-      if (type === "disconnect") {
-        await requestJson(endpoint, disconnectResponseSchema, options);
-        setStatus((previous) =>
-          previous ? { ...previous, connected: false } : previous,
-        );
-        toast("Spotify disconnected. The Aux queue is kept.");
-      } else {
-        const data = await requestJson(
-          type === "next" ? `/api/rooms/${room.code}` : endpoint,
-          roomViewSchema,
-          { ...options, method: type === "next" ? "PATCH" : "POST" },
-        );
-        onSync(data);
-        toast("Playback command saved for the worker.");
-      }
-      await refresh();
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  const connected = status?.connected ?? room.playback?.connected;
-  const device = room.playback?.device;
+  const { host, status, error, busy, command, refresh, connected, device } =
+    useSpotifyConnection(room, onSync);
   return (
     <section className="spotify-connection" aria-label="Spotify connection">
       <div className="flex items-center justify-between gap-2">
@@ -123,15 +27,50 @@ export function SpotifyConnection({
         </h2>
         {connected && <span className="connection-dot" />}
       </div>
-      <p>
-        {connected
-          ? device
-            ? `Controlling ${device.name}`
-            : "Open Spotify on the host’s phone and start a song."
-          : host
-            ? "Connect the host account. Your group only needs Aux."
-            : "Waiting for the host to connect Spotify."}
-      </p>
+      <p>{connectionDescription(connected, device, host)}</p>
+      <ConnectionNotices
+        room={room}
+        host={host}
+        status={status}
+        error={error}
+      />
+      <ConnectionActions
+        room={room}
+        host={host}
+        status={status}
+        busy={busy}
+        command={command}
+        refresh={refresh}
+        connected={connected}
+      />
+      <small>
+        Aux owns the queue. Spotify plays one selected track at a time.
+      </small>
+    </section>
+  );
+}
+
+function connectionDescription(
+  connected: ConnectionState["connected"],
+  device: ConnectionState["device"],
+  host: boolean,
+): string {
+  if (connected)
+    return device
+      ? `Controlling ${device.name}`
+      : "Open Spotify on the host’s phone and start a song.";
+  return host
+    ? "Connect the host account. Your group only needs Aux."
+    : "Waiting for the host to connect Spotify.";
+}
+function ConnectionNotices({
+  room,
+  host,
+  status,
+  error,
+}: Pick<ConnectionState, "host" | "status" | "error"> & { room: RoomView }) {
+  return (
+    <>
       {status && !status.configured && host && (
         <div className="connection-setup">
           Spotify setup is needed on this server. Follow the README to add your
@@ -149,74 +88,124 @@ export function SpotifyConnection({
           when the worker is running.
         </p>
       )}
-      <div className="connection-buttons">
-        {host && connected && !room.ended && (
-          <button
-            className="button primary"
-            disabled={busy || !room.orchestration?.workerOnline}
-            onClick={() =>
-              command(
-                room.orchestration?.automatic
-                  ? "next"
-                  : room.orchestration?.uncertain ||
-                      room.orchestration?.activeRequestId
-                    ? "recover"
-                    : "next",
-              )
-            }
-          >
-            {room.orchestration?.automatic
-              ? "Play next in Aux"
-              : "Start / resume Aux"}
-          </button>
-        )}
-        {host && !connected && (
-          <button
-            className="button primary"
-            disabled={busy || !status?.configured || room.ended}
-            onClick={() => command("connect")}
-          >
-            <Link2 size={15} />
-            {busy ? "Connecting…" : "Connect Spotify"}
-          </button>
-        )}
-        {connected && (
-          <>
-            <a
-              className="button secondary"
-              href="https://open.spotify.com/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open Spotify
-              <ExternalLink size={13} />
-            </a>
-            {host && (
-              <>
-                <button
-                  className="icon-button"
-                  aria-label="Refresh Spotify player"
-                  disabled={busy || room.ended}
-                  onClick={() => void refresh()}
-                >
-                  <RefreshCw size={16} />
-                </button>
-                <button
-                  className="icon-button"
-                  aria-label="Disconnect Spotify"
-                  disabled={busy}
-                  onClick={() => command("disconnect")}
-                >
-                  <Unplug size={16} />
-                </button>
-              </>
-            )}
-          </>
-        )}
-      </div>
-      <small>
-        Aux owns the queue. Spotify plays one selected track at a time.
-      </small>
-    </section>
+    </>
+  );
+}
+type ActionsProps = Pick<
+  ConnectionState,
+  "host" | "status" | "busy" | "command" | "refresh" | "connected"
+> & { room: RoomView };
+function ConnectionActions({
+  room,
+  host,
+  status,
+  busy,
+  command,
+  refresh,
+  connected,
+}: ActionsProps) {
+  if (!connected)
+    return host ? (
+      <ConnectButton
+        room={room}
+        status={status}
+        busy={busy}
+        command={command}
+      />
+    ) : null;
+  return (
+    <div className="connection-buttons">
+      {host && (
+        <StartPlaybackButton room={room} busy={busy} command={command} />
+      )}
+      <a
+        className="button secondary"
+        href="https://open.spotify.com/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Open Spotify
+        <ExternalLink size={13} />
+      </a>
+      {host && (
+        <HostControls
+          room={room}
+          busy={busy}
+          command={command}
+          refresh={refresh}
+        />
+      )}
+    </div>
+  );
+}
+function ConnectButton({
+  room,
+  status,
+  busy,
+  command,
+}: Pick<ActionsProps, "room" | "status" | "busy" | "command">) {
+  return (
+    <div className="connection-buttons">
+      <button
+        className="button primary"
+        disabled={busy || !status?.configured || room.ended}
+        onClick={() => command("connect")}
+      >
+        <Link2 size={15} />
+        {busy ? "Connecting…" : "Connect Spotify"}
+      </button>
+    </div>
+  );
+}
+function resumeCommand(room: RoomView): "next" | "recover" {
+  if (room.orchestration?.automatic) return "next";
+  return room.orchestration?.uncertain || room.orchestration?.activeRequestId
+    ? "recover"
+    : "next";
+}
+function HostControls({
+  room,
+  busy,
+  command,
+  refresh,
+}: Pick<ActionsProps, "room" | "busy" | "command" | "refresh">) {
+  return (
+    <>
+      <button
+        className="icon-button"
+        aria-label="Refresh Spotify player"
+        disabled={busy || room.ended}
+        onClick={() => void refresh()}
+      >
+        <RefreshCw size={16} />
+      </button>
+      <button
+        className="icon-button"
+        aria-label="Disconnect Spotify"
+        disabled={busy}
+        onClick={() => command("disconnect")}
+      >
+        <Unplug size={16} />
+      </button>
+    </>
+  );
+}
+
+function StartPlaybackButton({
+  room,
+  busy,
+  command,
+}: Pick<ActionsProps, "room" | "busy" | "command">) {
+  if (room.ended) return null;
+  return (
+    <button
+      className="button primary"
+      disabled={busy || !room.orchestration?.workerOnline}
+      onClick={() => command(resumeCommand(room))}
+    >
+      {room.orchestration?.automatic
+        ? "Play next in Aux"
+        : "Start / resume Aux"}
+    </button>
   );
 }

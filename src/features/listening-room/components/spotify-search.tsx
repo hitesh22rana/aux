@@ -9,6 +9,12 @@ import {
   searchResultsSchema,
 } from "@/features/listening-room/model/contracts";
 import type { RoomView, Track } from "@/features/listening-room/model/catalog";
+type SearchState =
+  | { status: "idle"; query: string }
+  | { status: "loading"; query: string }
+  | { status: "ready"; query: string; tracks: Track[] }
+  | { status: "error"; query: string; message: string };
+
 export function SpotifySearch({
   room,
   onUpdate,
@@ -17,9 +23,10 @@ export function SpotifySearch({
   onUpdate: (room: RoomView) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [search, setSearch] = useState<SearchState>({
+    status: "idle",
+    query: "",
+  });
   const [pending, setPending] = useState<string | null>(null);
   const requestIdsRef = useRef(new Map<string, string>());
   const inFlightRef = useRef(false);
@@ -28,22 +35,20 @@ export function SpotifySearch({
     if (query.trim().length < 2) return;
     const controller = new AbortController();
     const timer = setTimeout(async () => {
-      setLoading(true);
-      setError("");
+      const term = query.trim();
+      setSearch({ status: "loading", query: term });
       try {
         const data = await requestJson(
           `${endpoint}?q=${encodeURIComponent(query.trim())}`,
           searchResultsSchema,
           { signal: controller.signal },
         );
-        setTracks(data.tracks);
+        if (!controller.signal.aborted)
+          setSearch({ status: "ready", query: term, tracks: data.tracks });
       } catch (e) {
         if (!controller.signal.aborted) {
-          setError(errorMessage(e));
-          setTracks([]);
+          setSearch({ status: "error", query: term, message: errorMessage(e) });
         }
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
       }
     }, 500);
     return () => {
@@ -74,7 +79,11 @@ export function SpotifySearch({
       inFlightRef.current = false;
     }
   }
-  const results = query.trim().length >= 2 ? tracks : [];
+  const activeSearch =
+    search.query === query.trim() ? search : ({ status: "idle" } as const);
+  const loading = activeSearch.status === "loading";
+  const error = activeSearch.status === "error" ? activeSearch.message : "";
+  const results = activeSearch.status === "ready" ? activeSearch.tracks : [];
   const isHost = room.members.some((m) => m.id === room.me && m.host);
   return (
     <section className="discover-section live-discover">
@@ -93,9 +102,6 @@ export function SpotifySearch({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setTracks([]);
-            setLoading(false);
-            setError("");
           }}
           placeholder="Song, artist, or Spotify track link"
           enterKeyHint="search"
@@ -106,7 +112,6 @@ export function SpotifySearch({
             aria-label="Clear Spotify search"
             onClick={() => {
               setQuery("");
-              setError("");
             }}
           >
             <X size={16} />

@@ -93,9 +93,11 @@ export async function changeQueue<T>(
   throw new AppError("The queue changed several times. Please try again.", 409);
 }
 export async function liveView(room: Room, me: string): Promise<RoomView> {
-  const state = await queueState(room);
   const client = await redis();
-  const worker = await client.exists(queueKeys.heartbeat);
+  const [state, worker] = await Promise.all([
+    queueState(room),
+    client.exists(queueKeys.heartbeat),
+  ]);
   return {
     ...room,
     queue: state.queue,

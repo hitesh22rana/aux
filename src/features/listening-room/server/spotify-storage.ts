@@ -6,6 +6,7 @@ import {
   createHash,
 } from "node:crypto";
 import { db } from "@/server/database/sqlite";
+import { roomSchema } from "../model/contracts";
 import { AppError } from "@/shared/lib/errors";
 
 db.exec(`CREATE TABLE IF NOT EXISTS spotify_connections (code TEXT PRIMARY KEY REFERENCES rooms(code), tokens TEXT NOT NULL);
@@ -125,8 +126,9 @@ export function bindAccount(code: string, tokens: Tokens) {
       data: string;
     }[];
     for (const row of rows) {
+      const room = roomSchema.parse(JSON.parse(row.data));
       if (
-        !JSON.parse(row.data).ended &&
+        !room.ended &&
         unseal<Tokens>(row.tokens, row.code).accountId === tokens.accountId
       )
         throw new AppError(

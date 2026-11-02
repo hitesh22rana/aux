@@ -38,29 +38,13 @@ export function QueueRow({
     <div className="queue-row group" key={item.id}>
       <span className="queue-number">{index + 1}</span>
       <Art track={track} />
-      <div className="song-info">
-        <div className="font-medium truncate">{track.title}</div>
-        <div className="text-xs text-muted truncate mt-1">{track.artist}</div>
-        {live && (
-          <span className="delivery-status">
-            {room.orchestration?.inFlightId === item.id
-              ? manual
-                ? "Selected by host"
-                : "Handing to Spotify…"
-              : "Waiting in Aux"}
-          </span>
-        )}
-        {live && track.url && (
-          <a
-            className="spotify-track-link"
-            href={track.url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open in {track.provider} ↗
-          </a>
-        )}
-      </div>
+      <QueueTrackInfo
+        room={room}
+        item={item}
+        track={track}
+        live={live}
+        manual={manual}
+      />
       <span className="requester">
         <span className="mini-avatar" style={{ background: member?.color }}>
           {member?.name[0]}
@@ -81,6 +65,70 @@ export function QueueRow({
         <ChevronUp size={14} />
         {item.votes.length}
       </button>
+      <QueueRowActions
+        room={room}
+        item={item}
+        track={track}
+        isHost={isHost}
+        index={index}
+        busy={busy}
+        onAction={onAction}
+      />
+    </div>
+  );
+}
+
+function deliveryLabel(
+  room: RoomView,
+  item: QueueItem,
+  manual: boolean,
+): string {
+  if (room.orchestration?.inFlightId !== item.id) return "Waiting in Aux";
+  return manual ? "Selected by host" : "Handing to Spotify…";
+}
+function QueueTrackInfo({
+  room,
+  item,
+  track,
+  live,
+  manual,
+}: Pick<QueueRowProps, "room" | "item" | "track" | "live" | "manual">) {
+  return (
+    <div className="song-info">
+      <div className="font-medium truncate">{track.title}</div>
+      <div className="text-xs text-muted truncate mt-1">{track.artist}</div>
+      {live && (
+        <span className="delivery-status">
+          {deliveryLabel(room, item, manual)}
+        </span>
+      )}
+      {live && track.url && (
+        <a
+          className="spotify-track-link"
+          href={track.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open in {track.provider} ↗
+        </a>
+      )}
+    </div>
+  );
+}
+function QueueRowActions({
+  room,
+  item,
+  track,
+  isHost,
+  index,
+  busy,
+  onAction,
+}: Pick<
+  QueueRowProps,
+  "room" | "item" | "track" | "isHost" | "index" | "busy" | "onAction"
+>) {
+  return (
+    <>
       {(isHost || item.memberId === room.me) && (
         <button
           className="icon-button remove-button"
@@ -101,6 +149,6 @@ export function QueueRow({
           <ArrowUp size={14} />
         </button>
       )}
-    </div>
+    </>
   );
 }

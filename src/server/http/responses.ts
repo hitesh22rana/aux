@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { parseUrl } from "@/shared/lib/url";
 import { AppError } from "@/shared/lib/errors";
 export function errorResponse(error: unknown) {
   if (error instanceof AppError)
@@ -22,7 +23,9 @@ export function checkOrigin(request: NextRequest) {
   const origin = request.headers.get("origin");
   const host =
     request.headers.get("x-forwarded-host") || request.headers.get("host");
-  if (origin && new URL(origin).host !== host)
+  if (!origin) return;
+  const uri = parseUrl(origin);
+  if (!uri || uri.host !== host)
     throw new AppError("Request origin not allowed.", 403);
 }
 export function withSession(

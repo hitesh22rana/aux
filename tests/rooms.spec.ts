@@ -328,3 +328,53 @@ test("Amazon Music and the remaining handoff services are selectable on mobile",
     fullPage: true,
   });
 });
+
+test("catalog search clears stale results when the query changes", async ({
+  page,
+}) => {
+  await page.route("**/api/rooms/*/spotify?q=**", async (route) => {
+    const query = new URL(route.request().url()).searchParams.get("q");
+    await route.fulfill({
+      json: {
+        tracks: [
+          {
+            id: "spotify:track:1111111111111111111111",
+            title: query === "gold" ? "Golden result" : "Sunflower result",
+            artist: "Search artist",
+            album: "Search album",
+            duration: 180,
+            art: "placeholder",
+            mood: "",
+            provider: "Spotify",
+            url: "https://open.spotify.com/track/1111111111111111111111",
+          },
+        ],
+      },
+    });
+  });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Create a room", exact: true })
+    .click();
+  await page.getByLabel("Your name", { exact: true }).fill("Search host");
+  await page.getByRole("button", { name: "Create room", exact: true }).click();
+  const search = page.getByRole("textbox", { name: "Search Spotify songs" });
+  await search.fill("gold");
+  await expect(
+    page.getByRole("heading", { name: "Golden result" }),
+  ).toBeVisible();
+  await search.fill("sun");
+  await expect(
+    page.getByRole("heading", { name: "Golden result" }),
+  ).not.toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Sunflower result" }),
+  ).toBeVisible();
+  await search.fill("");
+  await expect(
+    page.getByRole("heading", { name: "Sunflower result" }),
+  ).not.toBeVisible();
+  await expect(
+    page.getByText("Searching Spotify…", { exact: true }),
+  ).not.toBeVisible();
+});

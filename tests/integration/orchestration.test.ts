@@ -398,6 +398,28 @@ describe("Aux-owned durable queue", () => {
   });
 });
 describe("Spotify protocol and secret storage", () => {
+  it("reports malformed redirect configuration as a setup error", () => {
+    const previous = process.env.SPOTIFY_REDIRECT_URI;
+    vi.stubEnv("SPOTIFY_REDIRECT_URI", "not-a-url");
+    try {
+      expect(() => provider.spotifyConfig()).toThrowError(
+        expect.objectContaining({ status: 503 }),
+      );
+    } finally {
+      vi.stubEnv("SPOTIFY_REDIRECT_URI", previous);
+    }
+  });
+  it("rejects malformed request origins without an unhandled URL error", async () => {
+    const { NextRequest } = await import("next/server");
+    const { checkOrigin } = await import("@/server/http/responses");
+    const request = new NextRequest("http://127.0.0.1:3000/api/rooms", {
+      headers: { host: "127.0.0.1:3000", origin: "not-a-url" },
+    });
+    expect(() => checkOrigin(request)).toThrowError(
+      expect.objectContaining({ status: 403 }),
+    );
+  });
+
   it("encrypts tokens at rest and rejects a replayed OAuth state", async () => {
     const h = room();
     const { db } = await import("@/server/database/sqlite");

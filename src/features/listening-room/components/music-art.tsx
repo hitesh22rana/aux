@@ -36,6 +36,30 @@ export function Art({
     />
   );
 }
+function SpotifyGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M5 8c5-2 10-1.5 14 .8M6 12c4-1.5 8-1 12 1M7 16c3-1 6-.7 9 1"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+function ProviderGlyph({
+  provider,
+  small,
+}: {
+  provider: Provider;
+  small: boolean;
+}) {
+  if (provider === "Spotify") return <SpotifyGlyph />;
+  if (provider === "YouTube Music")
+    return <Play size={small ? 9 : 13} fill="currentColor" />;
+  return <Music2 size={small ? 11 : 15} />;
+}
 export function ProviderMark({
   provider,
   small = false,
@@ -45,23 +69,10 @@ export function ProviderMark({
 }) {
   return (
     <span
-      className={`provider-mark ${small ? "small" : ""} provider-${providerDefinition(provider).id} ${provider === "Spotify" ? "spotify" : provider === "Apple Music" ? "apple" : provider === "YouTube Music" ? "youtube" : "saavn"}`}
+      className={`provider-mark ${small ? "small" : ""} provider-${providerDefinition(provider).id}`}
       aria-label={provider}
     >
-      {provider === "Spotify" ? (
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M5 8c5-2 10-1.5 14 .8M6 12c4-1.5 8-1 12 1M7 16c3-1 6-.7 9 1"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
-      ) : provider === "YouTube Music" ? (
-        <Play size={small ? 9 : 13} fill="currentColor" />
-      ) : (
-        <Music2 size={small ? 11 : 15} />
-      )}
+      <ProviderGlyph provider={provider} small={small} />
     </span>
   );
 }

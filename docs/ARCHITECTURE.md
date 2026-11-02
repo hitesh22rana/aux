@@ -11,8 +11,10 @@ src/
     index.ts                        Public client entrypoint
     contracts.ts                    Public runtime schemas and domain types
     api/room-client.ts              Typed browser room requests
-    components/                     Room UI, discovery, player, queue and dialogs
+    components/                     Room layout, discovery, player and queue views
+      dialogs/                      Individually owned create/join/invite/settings forms
     hooks/use-room-session.ts       Session restoration, polling and commands
+    hooks/use-spotify-connection.ts  Connection status, account commands and polling
     model/                          Contracts, demo catalog and service capabilities
     listening-room.module.css       Scoped feature styles
     server/
@@ -84,3 +86,11 @@ Web and worker processes share Redis settings, queue namespace, SQLite storage, 
 ## Reference
 
 The structure follows the colocation, feature boundaries, thin routes, and minimal global state recommendations in [How to Structure a Scalable React Project (2026 Guide)](https://medium.com/@kasunnadeera100/how-to-structure-a-scalable-react-project-2026-guide-d533298dff24). Aux retains Next.js routing and its current polling approach instead of adopting the article's SPA routing, state, or fetching libraries without a demonstrated need.
+
+## React health checks
+
+Run `npx react-doctor@latest` for an optional repository audit. This is an ad hoc tool, not a runtime dependency or an additional CI requirement. Review diagnostics against actual behavior before making changes.
+
+The 2026-11-02 cleanup split complex room, dialog, playback and connection components; moved connection lifecycle into a feature hook; made search loading/results query-specific; guarded malformed URL input; validated persisted room data before account binding; replaced repeated scope-array scans with a set; and parallelized independent queue/heartbeat reads. Existing queue durability, host permissions and manual-confirmation behavior remain covered by the test suites.
+
+React Doctor 0.9.22 reported no local diagnostics after the cleanup. Its remote score service was unavailable, so no numeric score is claimed.
