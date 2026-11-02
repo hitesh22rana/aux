@@ -90,7 +90,8 @@ The test suites cover queue concurrency, permissions, durable worker delivery, r
 
 ### Appearance
 
-Use the color theme control in the homepage or room header to choose System,
-Light, or Dark. System follows your device preference, including changes while
-Aux is open. Your choice is saved on this browser and applies across rooms,
-dialogs, and notifications.
+Use the Sun or Moon button in the homepage or room header to switch between
+Light and Dark. Aux follows your device preference by default, including changes
+while open, until you choose a theme. Your choice is saved on this browser and
+applies across rooms, dialogs, and notifications. Theme changes use a short
+crossfade in browsers supporting View Transitions and respect reduced motion.

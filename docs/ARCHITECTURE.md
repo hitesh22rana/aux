@@ -130,9 +130,9 @@ The common queue mutation path does not impose a per-person pending-song cap, fo
 ## Appearance
 
 `src/shared/theme/` owns the domain-independent theme provider and accessible
-selector. `next-themes` applies the saved `aux-theme` preference before paint;
-System is the default. Root `data-theme` tokens in `src/app/globals.css` style
+icon toggle. `next-themes` applies the saved `aux-theme` preference before paint;
+System is the default until an explicit Light or Dark choice. Root `data-theme` tokens in `src/app/globals.css` style
 both page content and portalled dialogs. Tailwind's dark variant uses the same
 attribute. Theme-dependent controls wait for the client snapshot to avoid SSR
-hydration differences. Notifications follow the resolved theme. Keep new UI
+hydration differences. Notifications follow the resolved theme. User toggles use the browser View Transition API for a 240ms color crossfade, with an immediate fallback and reduced-motion support. Keep new UI
 colors semantic so both light and dark themes remain supported.

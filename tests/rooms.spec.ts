@@ -1025,21 +1025,24 @@ test("color preferences persist and system follows device changes without hydrat
   });
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
-  const theme = page.getByRole("combobox", { name: "Color theme" });
-  await expect(theme).toHaveValue("system");
+  const toggle = () =>
+    page.getByRole("button", { name: /Switch to (light|dark) mode/ });
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await theme.selectOption("dark");
-  await page.reload();
-  await expect(theme).toHaveValue("dark");
+  await toggle().click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await theme.selectOption("light");
+  await page.reload();
+  await expect(toggle()).toHaveAccessibleName("Switch to light mode");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await toggle().click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.getByRole("button", { name: "Join a room", exact: false }).click();
   await expect(page.getByRole("dialog")).toHaveCSS(
     "background-color",
     "rgb(255, 255, 255)",
   );
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
-  await theme.selectOption("system");
+  await page.evaluate(() => localStorage.removeItem("aux-theme"));
+  await page.reload();
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.emulateMedia({ colorScheme: "light" });

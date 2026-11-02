@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { ThemeSelect } from "@/shared/theme/theme-select";
+import { ThemeToggle } from "@/shared/theme/theme-toggle";
 import { ArrowRight, ArrowUpRight, AudioLines } from "lucide-react";
 import styles from "./room-landing.module.css";
 
@@ -36,7 +36,7 @@ export function RoomLanding({
           <button className={styles.join} onClick={onJoin}>
             Join a room <ArrowUpRight size={17} />
           </button>
-          <ThemeSelect />
+          <ThemeToggle />
         </nav>
       </header>
       <main id="main" className={styles.stage}>

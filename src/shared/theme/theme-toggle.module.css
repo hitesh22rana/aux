@@ -1,0 +1,51 @@
+.control {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--control);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+}
+.control svg {
+  grid-area: 1 / 1;
+  transition:
+    transform 180ms var(--ease-out),
+    opacity 180ms ease;
+}
+.sun {
+  opacity: 0;
+  transform: rotate(-30deg);
+}
+.moon {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+:global([data-theme="dark"]) .sun {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+:global([data-theme="dark"]) .moon {
+  opacity: 0;
+  transform: rotate(30deg);
+}
+.control:active:not(:disabled) {
+  transform: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .control:hover .moon {
+    transform: rotate(-12deg);
+  }
+  :global([data-theme="dark"]) .control:hover .sun {
+    transform: rotate(30deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .control svg {
+    transition: opacity 120ms ease;
+    transform: none !important;
+  }
+}

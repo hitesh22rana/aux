@@ -135,3 +135,16 @@ h3 {
   background: #604624;
   color: #fff;
 }
+
+/* Theme snapshots crossfade without moving the page or interrupting layout. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
