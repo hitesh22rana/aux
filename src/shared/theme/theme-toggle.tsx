@@ -47,8 +47,18 @@ export function ThemeToggle() {
       disabled={!mounted}
       onClick={toggleTheme}
     >
-      <Sun className={styles.sun} size={18} aria-hidden="true" />
-      <Moon className={styles.moon} size={18} aria-hidden="true" />
+      <Sun
+        className={styles.sun}
+        size={24}
+        strokeWidth={1.8}
+        aria-hidden="true"
+      />
+      <Moon
+        className={styles.moon}
+        size={24}
+        strokeWidth={1.8}
+        aria-hidden="true"
+      />
     </button>
   );
 }

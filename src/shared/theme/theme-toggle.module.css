@@ -5,9 +5,9 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 1px solid var(--control);
+  border: 0;
   border-radius: 50%;
-  background: var(--paper);
+  background: transparent;
   color: var(--ink);
 }
 .control svg {
@@ -17,6 +17,7 @@
     opacity 180ms ease;
 }
 .sun {
+  color: var(--landing-accent);
   opacity: 0;
   transform: rotate(-30deg);
 }
