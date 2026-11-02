@@ -1,10 +1,11 @@
 "use client";
 import { RoomHeader, RoomHeading, type RoomTab } from "./room-layout";
+import { RoomLanding } from "./room-landing";
 import { RoomWorkspace } from "./room-workspace";
 import styles from "../listening-room.module.css";
 
 import { useCallback, useState } from "react";
-import { ArrowRight, Check, CircleHelp, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, CircleHelp } from "lucide-react";
 
 import { type RoomAction } from "@/features/listening-room/model/contracts";
 
@@ -28,6 +29,7 @@ export function ListeningRoom() {
     ready,
     busy: sessionBusy,
     offline,
+    entryError,
     isHost,
     live,
     manual,
@@ -48,90 +50,91 @@ export function ListeningRoom() {
     resetSession();
     setDialog(null);
     setTab("queue");
+    setMenu(false);
+    setLiked(false);
+    setJoinCode("");
   }
   return (
     <div className={styles.root}>
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <RoomHeader
-        room={room}
-        real={real}
-        tab={tab}
-        menu={menu}
-        onTabChange={(value) => {
-          setTab(value);
-          setMenu(false);
-        }}
-        onToggleMenu={() => setMenu((previous) => !previous)}
-        openDialog={openDialog}
-      />
-
-      <div className="main-shell">
-        <main id="main" className="main-content">
-          <RoomHeading
+      {!real ? (
+        <RoomLanding
+          ready={ready}
+          error={entryError}
+          onCreate={() => openDialog("create")}
+          onJoin={() => openDialog("join")}
+          onAbout={() => openDialog("about")}
+        />
+      ) : (
+        <>
+          <RoomHeader
             room={room}
             real={real}
-            ready={ready}
+            onHome={reset}
             tab={tab}
+            menu={menu}
+            onTabChange={(value) => {
+              setTab(value);
+              setMenu(false);
+            }}
+            onToggleMenu={() => setMenu((previous) => !previous)}
             openDialog={openDialog}
           />
-          {offline && (
-            <div className="connection-warning" role="status">
-              Connection interrupted. Reconnecting… Your last saved queue is
-              shown.
-            </div>
-          )}
-          {room.ended && (
-            <div className="ended-banner">
-              <Check size={18} />
-              This session has ended. Start a new room whenever you’re ready.
-              <button onClick={() => openDialog("create")}>
-                New room
-                <ArrowRight size={15} />
-              </button>
-            </div>
-          )}
-          {!real && (
-            <section className="welcome-state">
-              <ShieldCheck size={28} />
-              <h2>Good music starts with your people.</h2>
-              <p>
-                Start a shared queue, invite your group, and play through your
-                music app.
-              </p>
-              <button
-                className="button secondary"
-                onClick={() => openDialog("join")}
-              >
-                Join a room <ArrowRight size={16} />
-              </button>
-            </section>
-          )}
-          {real && (
-            <RoomWorkspace
-              session={session}
-              tab={tab}
-              liked={liked}
-              onLike={() => setLiked((previous) => !previous)}
-              openDialog={openDialog}
-              onAction={action}
-            />
-          )}
-          <footer className="page-footer">
-            <span>Made for listening together.</span>
-            <span>
-              <button
-                className="text-button"
-                onClick={() => openDialog("about")}
-              >
-                <CircleHelp size={14} />
-                How Aux works
-              </button>
-            </span>
-          </footer>
-        </main>
-      </div>
+
+          <div className="main-shell">
+            <main id="main" className="main-content">
+              <RoomHeading
+                room={room}
+                real={real}
+                ready={ready}
+                tab={tab}
+                openDialog={openDialog}
+              />
+              {offline && (
+                <div className="connection-warning" role="status">
+                  Connection interrupted. Reconnecting… Your last saved queue is
+                  shown.
+                </div>
+              )}
+              {room.ended && (
+                <div className="ended-banner">
+                  <Check size={18} />
+                  This session has ended. Start a new room whenever you’re
+                  ready.
+                  <button onClick={() => openDialog("create")}>
+                    New room
+                    <ArrowRight size={15} />
+                  </button>
+                </div>
+              )}
+              {real && (
+                <RoomWorkspace
+                  session={session}
+                  tab={tab}
+                  liked={liked}
+                  onLike={() => setLiked((previous) => !previous)}
+                  openDialog={openDialog}
+                  onAction={action}
+                />
+              )}
+              <footer className="page-footer">
+                <span>Made for listening together.</span>
+                <span>
+                  <button
+                    className="text-button"
+                    onClick={() => openDialog("about")}
+                  >
+                    <CircleHelp size={14} />
+                    How Aux works
+                  </button>
+                </span>
+              </footer>
+            </main>
+          </div>
+        </>
+      )}
       <RoomDialogs
         key={`${dialog ?? "closed"}:${joinCode}`}
         dialog={dialog}

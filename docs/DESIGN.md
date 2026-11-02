@@ -19,3 +19,13 @@ The initial interface audit reported nine failures, including tiny tracked label
 The remaining layout warning identifies the queue column beside the player rail. These are independent regions with different content lengths, not peer metric cards. They intentionally keep their own heights rather than stretching an empty panel. Queue ranks and clock padding are actual data; the floating dialog shadow and the permission message containing “unlock” are legitimate uses flagged by the source checker.
 
 Rooms display actual members and requests. The initial screen invites people to create or join a room, with no fabricated queue or playback. Forms use inline validation; required labels carry a red asterisk and Artist stays unmarked. The single Room settings control stays accessible at every viewport size.
+
+## Landing page
+
+The home page follows Taste Skill’s split-stage direction, seed 650188940. The aux cable, the object behind the product name, becomes the visual invitation to contribute. A single generated editorial still life shows headphones, an amber record, and an aux cable. It is conceptual artwork, not a photograph of a sold product or a customer session. The locally hosted WebP is approximately 182 KB.
+
+The desktop pairs a large two-line title with a sticky portrait image and a short reading column. On phones the image leads, followed by the title and create action. The brand keeps Inter, a near-black ground, and an amber accent. Join, create, and the explanation dialog use the existing working flows; the landing page has no room navigation or settings.
+
+The initial audit measured a 26px desktop title, no images, and a 30% empty block. The revised page uses a 118px title at 1440px, a 64px phone title, and one dominant image. Desktop, tablet, and phone crops are reviewed in the browser. Motion uses a brief image settle, type entrances, control feedback, and section reveals; reduced-motion preferences keep everything static and readable.
+
+The inspector’s four-picture floor is explicitly waived for this compact room-entry page: one original image supports the split-stage concept, while extra pictures would add no useful content. No stock footage is added. The limited-motion and no-footage warnings are accepted to keep room entry quick and avoid an autoplay distraction.

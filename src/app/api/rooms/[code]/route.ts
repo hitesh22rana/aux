@@ -3,6 +3,7 @@ import {
   roomCodeSchema,
   joinRequestSchema,
 } from "@/features/listening-room/contracts";
+import { AppError } from "@/shared/lib/errors";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 import {
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest, context: Context) {
   try {
     const code = v.parse(codeSchema, (await context.params).code.toUpperCase());
     const room = readRoom(code);
+    if (room.ended) throw new AppError("This session has ended.", 410);
     const member = identify(code, request.cookies.get(`aux_${code}`)?.value);
     return NextResponse.json(await liveView(room, member.id), {
       headers: { "Cache-Control": "no-store" },

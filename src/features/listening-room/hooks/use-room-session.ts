@@ -5,7 +5,7 @@ import { emptyRoom, type RoomView } from "../model/room";
 import { providerDefinition } from "../model/providers";
 import type { RoomAction } from "../model/contracts";
 import { roomRequest } from "../api/room-client";
-import { errorMessage } from "@/shared/api/http-client";
+import { errorMessage, HttpError } from "@/shared/api/http-client";
 
 export function useRoomSession(onJoinRequired: (code: string) => void) {
   const [room, setRoom] = useState<RoomView>(emptyRoom);
@@ -13,6 +13,7 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [entryError, setEntryError] = useState("");
   const [now, setNow] = useState(0);
   const fetchingRef = useRef(false);
   const mutationVersionRef = useRef(0);
@@ -39,12 +40,12 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
     setRoom(data);
     setReal(true);
     setReady(true);
-    localStorage.setItem("aux-room", data.code);
+    setEntryError("");
     history.replaceState(null, "", `/?room=${data.code}`);
   }, []);
   useEffect(() => {
     let stopped = false;
-    // Restore browser-owned state after hydration without blocking the first paint.
+    // Only an explicit invitation URL restores a room; the home page always stays home.
     const bootstrap = window.setTimeout(() => {
       setNow(Date.now());
       const params = new URLSearchParams(location.search);
@@ -57,20 +58,42 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
           params.get("reason") ||
             "Spotify connection failed. Try connecting again.",
         );
-      const code = params.get("room") || localStorage.getItem("aux-room");
+      const code = params.get("room");
       if (!code) {
         setReady(true);
         return;
       }
       roomRequest(`/api/rooms/${encodeURIComponent(code)}`)
         .then((data) => {
-          if (!stopped) setActiveRoom(data);
-        })
-        .catch(() => {
-          if (!stopped) {
-            onJoinRequired(code);
+          if (stopped) return;
+          if (data.ended) {
+            setEntryError(
+              "This room has ended. Ask for a new invite or start a room.",
+            );
+            history.replaceState(null, "", "/");
             setReady(true);
+            return;
           }
+          setActiveRoom(data);
+        })
+        .catch((error: unknown) => {
+          if (stopped) return;
+          if (error instanceof HttpError && error.status === 401) {
+            onJoinRequired(code);
+          } else {
+            setEntryError(
+              error instanceof HttpError &&
+                [400, 404, 410].includes(error.status)
+                ? "This room is no longer available. Ask for a new invite or start a room."
+                : "We couldn’t open this room. Try this link again in a moment.",
+            );
+            if (
+              error instanceof HttpError &&
+              [400, 404, 410].includes(error.status)
+            )
+              history.replaceState(null, "", "/");
+          }
+          setReady(true);
         });
     }, 0);
     return () => {
@@ -95,8 +118,18 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
           setRoom(data);
           setOffline(false);
         }
-      } catch {
-        if (!stopped) setOffline(true);
+      } catch (error: unknown) {
+        if (!stopped) {
+          if (error instanceof HttpError && error.status === 410) {
+            setRoom((previous) => ({
+              ...previous,
+              ended: true,
+              playing: false,
+              startedAt: null,
+            }));
+            setOffline(false);
+          } else setOffline(true);
+        }
       } finally {
         fetchingRef.current = false;
       }
@@ -128,10 +161,12 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
     }
   }
   function resetSession() {
-    localStorage.removeItem("aux-room");
+    mutationVersionRef.current++;
     history.replaceState(null, "", "/");
     setReal(false);
     setRoom(emptyRoom());
+    setOffline(false);
+    setEntryError("");
   }
   return {
     room,
@@ -139,6 +174,7 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
     ready,
     busy,
     offline,
+    entryError,
     isHost,
     live,
     manual,

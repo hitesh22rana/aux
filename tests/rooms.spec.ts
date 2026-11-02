@@ -86,6 +86,8 @@ test("host and member share durable requests and enforce room permissions", asyn
       })
     ).status(),
   ).toBe(403);
+  await h.getByRole("button", { name: "End the session", exact: true }).click();
+  await expect(g.locator(".ended-banner")).toBeVisible({ timeout: 8000 });
   await host.close();
   await guest.close();
 });
@@ -568,4 +570,105 @@ test("failed song requests preserve drafts and reuse their idempotency key", asy
   await expect(
     page.getByRole("textbox", { name: "Song title", exact: true }),
   ).toHaveValue("");
+});
+
+test("home ignores saved rooms and the home link leaves an active room", async ({
+  page,
+}) => {
+  const code = await createRoom(page);
+  await page.evaluate(
+    (savedCode) => localStorage.setItem("aux-room", savedCode),
+    code,
+  );
+  const roomReads: string[] = [];
+  page.on("request", (request) => {
+    if (
+      request.method() === "GET" &&
+      request.url().includes(`/api/rooms/${code}`)
+    )
+      roomReads.push(request.url());
+  });
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Pass the aux." }),
+  ).toBeVisible();
+  await expect(page).toHaveURL("http://127.0.0.1:3000/");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toHaveCount(0);
+  expect(roomReads).toEqual([]);
+  await page.goto(`/?room=${code}`);
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Aux home" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Pass the aux." }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("closed and invalid invitation links show the landing page without opening a form", async ({
+  page,
+}) => {
+  const code = await createRoom(page);
+  const ended = await page.request.patch(`/api/rooms/${code}`, {
+    data: { type: "end" },
+  });
+  expect(ended.ok()).toBe(true);
+  await page.goto(`/?room=${code}`);
+  await expect(
+    page.getByRole("alert").filter({ hasText: "no longer available" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Pass the aux." }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toHaveCount(0);
+  await expect(page).toHaveURL("http://127.0.0.1:3000/");
+  await page.goto("/?room=invalid");
+  await expect(
+    page.getByRole("alert").filter({ hasText: "no longer available" }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("extension-added root attributes do not cause hydration warnings", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    const install = () => {
+      if (!document.documentElement) return false;
+      document.documentElement.setAttribute("data-lt-installed", "true");
+      document.documentElement.setAttribute("suppresshydrationwarning", "true");
+      return true;
+    };
+    if (!install()) {
+      const observer = new MutationObserver(() => {
+        if (install()) observer.disconnect();
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    }
+  });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Create a room", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(
+    errors.filter((message) =>
+      /hydrat|didn.t match|server rendered/i.test(message),
+    ),
+  ).toEqual([]);
 });

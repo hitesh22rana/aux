@@ -76,3 +76,24 @@ describe("client API contracts", () => {
     );
   });
 });
+
+it("retains HTTP status so invitation failures can be handled without parsing messages", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { error: "Join this room to continue." },
+          { status: 401 },
+        ),
+      ),
+  );
+  await expect(
+    requestJson("/api/rooms/ABC123", roomViewSchema),
+  ).rejects.toMatchObject({
+    name: "HttpError",
+    message: "Join this room to continue.",
+    status: 401,
+  });
+});

@@ -28,6 +28,7 @@ interface RoomHeaderProps {
   menu: boolean;
   onTabChange: (tab: RoomTab) => void;
   onToggleMenu: () => void;
+  onHome: () => void;
   openDialog: (dialog: RoomDialog) => void;
 }
 export function RoomHeader({
@@ -37,12 +38,13 @@ export function RoomHeader({
   menu,
   onTabChange,
   onToggleMenu,
+  onHome,
   openDialog,
 }: RoomHeaderProps) {
   return (
     <header className="app-header">
       <div className="header-inner">
-        <Link className="brand" href="/" aria-label="Aux home">
+        <Link className="brand" href="/" onClick={onHome} aria-label="Aux home">
           <AudioLines size={26} strokeWidth={1.6} />
           <span>
             aux<span className="brand-period">.</span>
@@ -86,16 +88,16 @@ export function RoomHeader({
             Join a room
             <ArrowUp size={14} className="rotate-45" />
           </button>
-          <button
-            className="icon-button room-settings-action"
-            aria-label="Room settings"
-            title="Room settings"
-            disabled={!real}
-            onClick={() => openDialog("settings")}
-          >
-            <Settings2 size={18} />
-            <span>Room settings</span>
-          </button>
+          {real && !room.ended && (
+            <button
+              className="text-button room-settings-action"
+              aria-label="Room settings"
+              onClick={() => openDialog("settings")}
+            >
+              <Settings2 size={18} />
+              <span>Room settings</span>
+            </button>
+          )}
           <button
             className="mobile-menu icon-button"
             aria-label={menu ? "Close navigation" : "Open navigation"}

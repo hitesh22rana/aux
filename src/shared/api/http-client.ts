@@ -1,5 +1,15 @@
 import * as v from "valibot";
 
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
 const errorSchema = v.object({ error: v.string() });
 
 export function errorMessage(
@@ -30,10 +40,11 @@ export async function requestJson<T>(
   }
   if (!response.ok) {
     const failure = v.safeParse(errorSchema, data);
-    throw new Error(
+    throw new HttpError(
       failure.success
         ? failure.output.error
         : "Couldn’t complete the request. Please try again.",
+      response.status,
     );
   }
   const result = v.safeParse(schema, data);

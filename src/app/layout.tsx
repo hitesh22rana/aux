@@ -18,8 +18,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // LanguageTool and similar extensions may add root attributes before hydration.
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
         {children}
         <Toaster

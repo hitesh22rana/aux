@@ -1,0 +1,91 @@
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight, AudioLines } from "lucide-react";
+import styles from "./room-landing.module.css";
+
+interface RoomLandingProps {
+  ready: boolean;
+  error: string;
+  onCreate: () => void;
+  onJoin: () => void;
+  onAbout: () => void;
+}
+
+export function RoomLanding({
+  ready,
+  error,
+  onCreate,
+  onJoin,
+  onAbout,
+}: RoomLandingProps) {
+  return (
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <Link className={styles.brand} href="/" aria-label="Aux home">
+          <AudioLines size={28} strokeWidth={1.6} />
+          <span>aux.</span>
+        </Link>
+        <button className={styles.join} onClick={onJoin}>
+          Join a room <ArrowUpRight size={17} />
+        </button>
+      </header>
+      <main id="main" className={styles.stage}>
+        <div className={styles.reading}>
+          <section className={styles.hero} aria-labelledby="landing-title">
+            <h1 id="landing-title">
+              <span>Pass</span> <span>the aux.</span>
+            </h1>
+            <p className={styles.description}>
+              A shared music queue for your people. Everyone brings a song. You
+              make the soundtrack.
+            </p>
+            {error && (
+              <p className={styles.notice} role="alert">
+                {error}
+              </p>
+            )}
+            <div className={styles.actions}>
+              <button
+                className={styles.primary}
+                onClick={onCreate}
+                disabled={!ready}
+              >
+                Create a room <ArrowRight size={20} />
+              </button>
+              <span>No account. Just a good pick.</span>
+            </div>
+          </section>
+          <section className={styles.how} aria-labelledby="how-title">
+            <h2 id="how-title">
+              Your people.
+              <br />
+              Their best picks.
+            </h2>
+            <p>
+              Send the invite. Let everyone add to the queue. Play through your
+              chosen music app, with the host in control.
+            </p>
+            <button className={styles.textAction} onClick={onAbout}>
+              How Aux works <ArrowUpRight size={17} />
+            </button>
+          </section>
+          <footer className={styles.footer}>
+            <span>Made for listening together.</span>
+            <span>Across multiple music services.</span>
+          </footer>
+        </div>
+        <figure className={styles.artwork}>
+          <Image
+            src="/images/pass-the-aux.webp"
+            alt="Black headphones, a honey-orange record and a looping aux cable on a warm amber surface."
+            fill
+            sizes="(max-width: 760px) 100vw, 52vw"
+            priority
+            className={styles.image}
+          />
+        </figure>
+      </main>
+    </div>
+  );
+}

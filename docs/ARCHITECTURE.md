@@ -102,3 +102,11 @@ Valibot defines request, response, provider, persistence, and form contracts. In
 Forms use `noValidate` to replace browser validation bubbles with inline errors connected through `aria-describedby` and `aria-invalid`. Validation starts on touch or submit, then updates as users correct the field. The first invalid field receives focus. Required labels use a red asterisk and inputs expose `aria-required`; Artist remains unmarked. Server failures preserve the draft. Successful song requests reset the form, and retries retain an idempotency key for the same submitted values.
 
 The header has one Room settings entry, visible on desktop and mobile. Queue and room summary sections do not duplicate it.
+
+## Home and invitation navigation
+
+The root URL always opens the landing page. Room restoration requires an explicit `?room=CODE` query; a previously stored room code never redirects a home visit. The home wordmark clears the active browser view without ending the shared session. A member can reopen an active room through its invitation URL.
+
+An explicit invitation opens the join dialog only when the API returns HTTP 401. Closed rooms return HTTP 410; invalid or expired invitations show a message on the landing page. Connectivity failures show a retry message rather than opening a form. The HTTP client retains response status in `HttpError` so navigation does not infer status from message text.
+
+The root HTML element uses `suppressHydrationWarning` only for attributes injected by browser extensions such as LanguageTool. Hydration validation remains enabled for body content and application components.
