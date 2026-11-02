@@ -21,6 +21,9 @@
   font-weight: 650;
   letter-spacing: -0.05em;
 }
+.brandPeriod {
+  color: var(--landing-accent);
+}
 .brand svg {
   color: var(--landing-accent);
 }

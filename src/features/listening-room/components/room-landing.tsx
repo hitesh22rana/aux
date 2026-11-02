@@ -27,7 +27,9 @@ export function RoomLanding({
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="Aux home">
           <AudioLines size={28} strokeWidth={1.6} />
-          <span>aux.</span>
+          <span>
+            aux<span className={styles.brandPeriod}>.</span>
+          </span>
         </Link>
         <nav className={styles.navigation} aria-label="Home navigation">
           <button className={styles.join} onClick={onAbout}>
