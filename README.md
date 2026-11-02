@@ -87,3 +87,10 @@ The test suites cover queue concurrency, permissions, durable worker delivery, r
 - [Project contribution guidance](AGENTS.md)
 - [Environment template](.env.example)
 - [Local Redis configuration](docker-compose.yaml)
+
+### Appearance
+
+Use the color theme control in the homepage or room header to choose System,
+Light, or Dark. System follows your device preference, including changes while
+Aux is open. Your choice is saved on this browser and applies across rooms,
+dialogs, and notifications.

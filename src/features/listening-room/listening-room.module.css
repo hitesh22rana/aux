@@ -141,13 +141,13 @@
   }
   :global(.button):global(.primary),
   :global(.button):global(.dark) {
-    background: #fff;
-    color: #111;
+    background: var(--ink);
+    color: var(--bg);
   }
   :global(.button):global(.primary):disabled,
   :global(.button):global(.dark):disabled {
-    background: #303030;
-    color: #b4b4b4;
+    background: var(--disabled);
+    color: var(--muted);
   }
   :global(.button):global(.secondary) {
     background: transparent;
@@ -368,7 +368,7 @@
   :global(.vote-button):global(.voted) {
     color: var(--accent);
     border-color: #795d36;
-    background: #271f14;
+    background: var(--highlight);
   }
   :global(.queue-row) :global(.icon-button) {
     width: 24px;
@@ -494,14 +494,14 @@
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: #fff;
-    color: #111;
+    background: var(--ink);
+    color: var(--bg);
     display: grid;
     place-items: center;
   }
   :global(.add-song):global(.added) {
-    background: #222;
-    color: #fff;
+    background: var(--raised);
+    color: var(--ink);
   }
   :global(.song-card) h3 {
     margin-top: 10px;
@@ -616,7 +616,7 @@
   }
   :global(.playback-progress) {
     height: 3px;
-    background: #383838;
+    background: var(--control);
     border-radius: 2px;
     overflow: hidden;
     margin-top: 22px;
@@ -651,12 +651,12 @@
     place-items: center;
     width: 46px;
     height: 46px;
-    background: #fff;
-    color: #111;
+    background: var(--ink);
+    color: var(--bg);
     border-radius: 50%;
   }
   :global(.play-button):disabled {
-    background: #333;
+    background: var(--control);
   }
   :global(.playing-through) {
     display: flex;
@@ -766,8 +766,8 @@
   :global(.ended-banner) {
     padding: 14px 18px;
     border-radius: 10px;
-    background: #282217;
-    color: #e7c592;
+    background: var(--highlight);
+    color: var(--highlight-ink);
     margin-bottom: 20px;
     font-size: 13px;
     display: flex;
@@ -797,7 +797,7 @@
   :global(.form-stack) input:not([type="checkbox"]):not([type="radio"]),
   :global(.linked-title-fields) input {
     width: 100%;
-    background: #222;
+    background: var(--raised);
     border: 1px solid var(--control);
     border-radius: 8px;
     padding: 11px 12px;
@@ -830,7 +830,7 @@
     background: var(--ink);
   }
   :global(.member-presence.active) {
-    color: #b9dba4;
+    color: var(--positive);
   }
   :global(.form-stack) fieldset {
     border: 0;
@@ -853,7 +853,7 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    background: #222;
+    background: var(--raised);
     border: 1px solid var(--control);
     border-radius: 8px;
     padding: 9px;
@@ -888,7 +888,7 @@
   :global(.form-note) {
     display: flex;
     gap: 10px;
-    background: #252525;
+    background: var(--raised);
     padding: 14px;
     border-radius: 8px;
     color: var(--muted);
@@ -1016,7 +1016,7 @@
     width: 36px;
     height: 22px;
     padding: 3px;
-    background: #555;
+    background: var(--control);
     border-radius: 999px;
     flex-shrink: 0;
   }
@@ -1025,15 +1025,15 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #ccc;
+    background: var(--paper);
     transition: transform 140ms ease;
   }
   :global(.toggle):global(.on) {
-    background: #eee;
+    background: var(--ink);
   }
   :global(.toggle):global(.on) > span {
     transform: translateX(14px);
-    background: #111;
+    background: var(--bg);
   }
   :global(.about-steps) {
     display: grid;
@@ -1091,11 +1091,11 @@
     font-size: 12px;
   }
   :global(.connection-setup) {
-    color: #e7c592;
+    color: var(--highlight-ink);
     font-size: 13px;
     margin-top: 12px;
     padding: 12px;
-    background: #282217;
+    background: var(--highlight);
     border-radius: 8px;
   }
   :global(.connection-error) {
@@ -1216,8 +1216,8 @@
     top: -80px;
     z-index: 100;
     padding: 10px 16px;
-    background: #fff;
-    color: #000;
+    background: var(--ink);
+    color: var(--bg);
     border-radius: 8px;
   }
   :global(.skip-link):focus-visible {
@@ -1235,12 +1235,12 @@
     }
     :global(.icon-button):hover,
     :global(.browse-more):hover {
-      background: #222;
+      background: var(--raised);
     }
     :global(.button):global(.primary):hover,
     :global(.button):global(.dark):hover,
     :global(.play-button):hover {
-      background: #d9d9d9;
+      background: var(--primary-hover);
     }
     :global(.button):global(.secondary):hover {
       border-color: #aaa;
@@ -1250,7 +1250,7 @@
     }
     :global(.vote-button):hover {
       border-color: #aaa;
-      color: #fff;
+      color: var(--ink);
     }
   }
   @media (max-width: 1100px) {
@@ -1349,7 +1349,7 @@
       top: 60px;
       left: 0;
       right: 0;
-      background: #111;
+      background: var(--paper);
       padding: 20px;
       gap: 4px;
       border-bottom: 1px solid var(--control);

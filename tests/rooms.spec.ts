@@ -1014,3 +1014,39 @@ test("home is a single screen at standard desktop and phone sizes", async ({
     await page.screenshot({ path: `test-results/aux-home-${size.width}.png` });
   }
 });
+
+test("color preferences persist and system follows device changes without hydration errors", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/");
+  const theme = page.getByRole("combobox", { name: "Color theme" });
+  await expect(theme).toHaveValue("system");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await theme.selectOption("dark");
+  await page.reload();
+  await expect(theme).toHaveValue("dark");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await theme.selectOption("light");
+  await page.getByRole("button", { name: "Join a room", exact: false }).click();
+  await expect(page.getByRole("dialog")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await page.getByRole("button", { name: "Close dialog", exact: true }).click();
+  await theme.selectOption("system");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  expect(
+    errors.filter((error) =>
+      /hydration|didn't match|did not match/i.test(error),
+    ),
+  ).toEqual([]);
+});

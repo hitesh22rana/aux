@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Toaster } from "sonner";
+import { ThemeProvider } from "@/shared/theme/theme-provider";
 import "./globals.css";
 export const metadata: Metadata = {
   title: "aux | Everyone gets a say.",
@@ -11,7 +11,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#000000",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
 };
 export default function RootLayout({
   children,
@@ -22,16 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        {children}
-        <Toaster
-          theme="dark"
-          position="bottom-center"
-          richColors
-          closeButton
-          toastOptions={{
-            style: { fontFamily: "inherit", borderRadius: "12px" },
-          }}
-        />
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

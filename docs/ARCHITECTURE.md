@@ -126,3 +126,13 @@ Desktop columns share the document scroll. A ResizeObserver records the request 
 `GET /api/rooms` returns only unexpired, non-ended rooms authorized by the request’s `aux_CODE` cookies. Names and codes alone do not authorize membership. Invalid, departed, and expired sessions are omitted; the response is private and not cached. The home session dialog loads on demand and validates the response with Valibot. Resume shares the versioned room-entry function with direct invitations, so superseded entry requests cannot reactivate an old room after navigation.
 
 The common queue mutation path does not impose a per-person pending-song cap, for either automatic or handoff services. The 1,000-request session budget still bounds deduplication storage. Member settings omit host actions entirely; authorization remains enforced by services independently of rendering.
+
+## Appearance
+
+`src/shared/theme/` owns the domain-independent theme provider and accessible
+selector. `next-themes` applies the saved `aux-theme` preference before paint;
+System is the default. Root `data-theme` tokens in `src/app/globals.css` style
+both page content and portalled dialogs. Tailwind's dark variant uses the same
+attribute. Theme-dependent controls wait for the client snapshot to avoid SSR
+hydration differences. Notifications follow the resolved theme. Keep new UI
+colors semantic so both light and dark themes remain supported.

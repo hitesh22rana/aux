@@ -1,8 +1,4 @@
 .page {
-  --landing-ink: #f5f5f5;
-  --landing-ground: #0b0b0a;
-  --landing-accent: #e9bb62;
-  --landing-muted: #bab9b2;
   min-height: 100svh;
   background: var(--landing-ground);
   color: var(--landing-ink);
@@ -106,17 +102,18 @@
 }
 .primary {
   background: var(--landing-accent);
-  color: var(--landing-ground);
+  color: var(--on-accent);
 }
 .secondary {
   color: var(--landing-ink);
-  background: #252523;
+  background: var(--raised);
 }
 .primary:hover {
   background: var(--landing-ink);
+  color: var(--landing-ground);
 }
 .secondary:hover {
-  background: #353533;
+  background: var(--line);
 }
 .primary:disabled,
 .secondary:disabled {
@@ -168,7 +165,7 @@
     width: 24px;
   }
   .navigation {
-    gap: 16px;
+    gap: 10px;
   }
   .join {
     font-size: 14px;
@@ -324,5 +321,40 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+}
+
+@media (max-width: 420px) {
+  .header {
+    gap: 8px;
+    padding-inline: 18px;
+  }
+  .navigation {
+    gap: 10px;
+  }
+  .join {
+    font-size: 12px;
+    gap: 4px;
+  }
+}
+@media (max-width: 360px) {
+  .header {
+    padding-inline: 12px;
+  }
+  .brand {
+    font-size: 24px;
+    gap: 4px;
+  }
+  .brand svg {
+    width: 20px;
+  }
+  .navigation {
+    gap: 6px;
+  }
+  .join {
+    font-size: 11px;
+  }
+  .join svg {
+    display: none;
   }
 }

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { ThemeSelect } from "@/shared/theme/theme-select";
 import {
   ArrowDown,
   ArrowRight,
@@ -83,6 +84,7 @@ export function RoomHeader({
           ))}
         </nav>
         <div className="header-actions">
+          <ThemeSelect />
           {real && !room.ended && (
             <button
               className="text-button room-settings-action"

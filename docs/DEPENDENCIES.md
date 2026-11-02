@@ -25,6 +25,7 @@ Application versions were checked against the registry's stable `latest` tags an
 | Valibot                                       | 1.5.0   |
 | Prettier                                      | 3.9.10  |
 | Motion                                        | 14.9.0  |
+| next-themes                                   | 0.4.6   |
 | cn                                            | 0.5.1   |
 
 The complete dependency list is in `package.json` and `pnpm-lock.yaml`. Other dependencies were already at their current stable releases. Server and client package version numbers are independent; the Redis client does not need to share the server's major version.
