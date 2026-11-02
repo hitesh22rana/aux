@@ -1,5 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as v from "valibot";
+import { requestJson } from "@/shared/api/http-client";
+import { roomCodeSchema } from "../model/form-schemas";
+import { useRoomPresence } from "./use-room-presence";
 import { toast } from "sonner";
 import { emptyRoom, type RoomView } from "../model/room";
 import { providerDefinition } from "../model/providers";
@@ -7,9 +11,17 @@ import type { RoomAction } from "../model/contracts";
 import { roomRequest } from "../api/room-client";
 import { errorMessage, HttpError } from "@/shared/api/http-client";
 
-export function useRoomSession(onJoinRequired: (code: string) => void) {
+const leaveResponseSchema = v.object({
+  left: v.literal(true),
+  ended: v.boolean(),
+});
+export function useRoomSession(
+  onJoinRequired: (code: string) => void,
+  initialRoomCode?: string,
+) {
   const [room, setRoom] = useState<RoomView>(emptyRoom);
   const [real, setReal] = useState(false);
+  const [resolving, setResolving] = useState(Boolean(initialRoomCode));
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [offline, setOffline] = useState(false);
@@ -17,6 +29,7 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
   const [now, setNow] = useState(0);
   const fetchingRef = useRef(false);
   const mutationVersionRef = useRef(0);
+  useRoomPresence(room.code, real && !room.ended);
   const me = room.members.find((m) => m.id === room.me);
   const isHost = me?.host ?? false;
   const live = real && room.mode === "live";
@@ -40,6 +53,7 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
     setRoom(data);
     setReal(true);
     setReady(true);
+    setResolving(false);
     setEntryError("");
     history.replaceState(null, "", `/?room=${data.code}`);
   }, []);
@@ -59,8 +73,15 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
             "Spotify connection failed. Try connecting again.",
         );
       const code = params.get("room");
-      if (!code) {
+      if (!code || !v.safeParse(roomCodeSchema, code).success) {
+        if (code) {
+          history.replaceState(null, "", "/");
+          setEntryError(
+            "This room is no longer available. Ask for a new invite or start a room.",
+          );
+        }
         setReady(true);
+        setResolving(false);
         return;
       }
       roomRequest(`/api/rooms/${encodeURIComponent(code)}`)
@@ -87,13 +108,12 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
                 ? "This room is no longer available. Ask for a new invite or start a room."
                 : "We couldn’t open this room. Try this link again in a moment.",
             );
-            if (
-              error instanceof HttpError &&
-              [400, 404, 410].includes(error.status)
-            )
-              history.replaceState(null, "", "/");
+            history.replaceState(null, "", "/");
           }
           setReady(true);
+        })
+        .finally(() => {
+          if (!stopped) setResolving(false);
         });
     }, 0);
     return () => {
@@ -128,6 +148,11 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
               startedAt: null,
             }));
             setOffline(false);
+          } else if (error instanceof HttpError && error.status === 401) {
+            history.replaceState(null, "", "/");
+            setReal(false);
+            setRoom(emptyRoom());
+            setEntryError("You’ve left this room. Join again to take part.");
           } else setOffline(true);
         }
       } finally {
@@ -160,6 +185,23 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
       setBusy(false);
     }
   }
+  async function leaveSession() {
+    if (busy) return false;
+    setBusy(true);
+    mutationVersionRef.current++;
+    try {
+      await requestJson(`/api/rooms/${room.code}`, leaveResponseSchema, {
+        method: "DELETE",
+      });
+      return true;
+    } catch (error) {
+      toast.error(errorMessage(error));
+      return false;
+    } finally {
+      mutationVersionRef.current++;
+      setBusy(false);
+    }
+  }
   function resetSession() {
     mutationVersionRef.current++;
     history.replaceState(null, "", "/");
@@ -186,5 +228,7 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
     setActiveRoom,
     action,
     resetSession,
+    leaveSession,
+    resolving,
   };
 }

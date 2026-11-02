@@ -92,7 +92,6 @@ export function SpotifySearch({
           <h2>Find it on Spotify</h2>
           <p>Search a song and artist, or paste a Spotify track link.</p>
         </div>
-        <span className="catalog-label">PLAYED BY THE HOST’S APP</span>
       </div>
       <div className="search-field">
         <Search size={18} />

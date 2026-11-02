@@ -163,3 +163,11 @@ See [Architecture and contribution boundaries](ARCHITECTURE.md) for the full lay
 [Spotify PKCE](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow) · [Playback API](https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback) · [Redirect requirements](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri) · [Quota modes](https://developer.spotify.com/documentation/web-api/concepts/quota-modes) · [Redis Streams](https://redis.io/docs/latest/develop/use-cases/streaming/nodejs/)
 
 The landing artwork is an original generated editorial still life served locally as WebP. Handoff songs use a neutral SVG artwork placeholder; live album art links back to Spotify. Inter is served locally with its Open Font License in `public/fonts/OFL.txt`. The interface workflow and design decisions are documented in [DESIGN.md](DESIGN.md). Service names do not imply affiliation.
+
+## Sessions and presence
+
+A room membership belongs to the browser's HTTP-only room cookie, and multiple tabs share it. Presence is tracked per tab with a 20-second heartbeat and a 90-second timeout. Normal page exit sends a best-effort beacon, but browsers do not guarantee delivery during crashes, mobile suspension, or network loss. Those connections become Away after the timeout. A saved membership can reconnect through its invitation URL.
+
+Guests can leave from Room settings. Leaving revokes that browser's membership across its tabs; accepted requests remain in the queue. Hosts choose End session and leave, which closes the shared queue for everyone before revoking the host session. It does not stop audio in a handoff app. Merely closing a tab or returning to the home view does not end the shared session.
+
+The optional shadcn CLI configuration in `components.json` maps generated primitives into `src/shared/ui` and helpers into `src/shared/lib`. The room-code component was installed with `npx shadcn@latest add swamimalode07/rare-ui/otp-input --yes -c .`; the explicit cwd is needed because pnpm declares this project as a workspace.

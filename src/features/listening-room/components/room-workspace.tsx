@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 import { ShieldCheck } from "lucide-react";
 import type { useRoomSession } from "../hooks/use-room-session";
 import type { RoomAction } from "../model/contracts";
@@ -44,12 +45,25 @@ export function RoomWorkspace({
     lookup,
     acceptPlayback,
   } = session;
+  const columnRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const column = columnRef.current;
+    if (!column) return;
+    const observer = new ResizeObserver(() =>
+      column.style.setProperty(
+        "--room-column-height",
+        `${column.offsetHeight}px`,
+      ),
+    );
+    observer.observe(column);
+    return () => observer.disconnect();
+  }, []);
   const totalMinutes = Math.ceil(
     room.queue.reduce((n, q) => n + (lookup(q.trackId)?.duration ?? 0), 0) / 60,
   );
   return (
     <div className="workspace-grid">
-      <div className="left-column">
+      <div className="left-column" ref={columnRef}>
         {current && (
           <MobilePlayerSummary current={current} manual={manual} room={room} />
         )}

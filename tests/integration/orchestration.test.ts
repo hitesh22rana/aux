@@ -725,3 +725,128 @@ describe("Multi-provider host-led playback", () => {
       expect(parseTrackLink(unsafe)).toBeNull();
   });
 });
+
+describe("room presence and departure", () => {
+  it("counts independent tabs, prevents late resurrection and expires lost connections", async () => {
+    const presence =
+      await import("@/features/listening-room/server/room-presence");
+    const { PRESENCE_WINDOW_MS } =
+      await import("@/features/listening-room/model/presence");
+    const h = room();
+    const guest = store.joinRoom(h.room.code, "Guest");
+    const first = randomUUID(),
+      second = randomUUID();
+    await presence.updatePresence(h.room.code, guest.room.me, first, "online");
+    await presence.updatePresence(h.room.code, guest.room.me, second, "online");
+    let members = await presence.roomPresence(store.readRoom(h.room.code));
+    expect(members.find((member) => member.id === guest.room.me)).toMatchObject(
+      { active: true, connections: 2 },
+    );
+    await presence.updatePresence(h.room.code, guest.room.me, first, "offline");
+    await presence.updatePresence(h.room.code, guest.room.me, first, "online");
+    members = await presence.roomPresence(store.readRoom(h.room.code));
+    expect(members.find((member) => member.id === guest.room.me)).toMatchObject(
+      { active: true, connections: 1 },
+    );
+    await presence.updatePresence(
+      h.room.code,
+      guest.room.me,
+      second,
+      "offline",
+    );
+    await (
+      await redisModule.redis()
+    ).zAdd(queueKeys.presence(h.room.code), {
+      value: `${guest.room.me}:${randomUUID()}`,
+      score: Date.now() - PRESENCE_WINDOW_MS - 1,
+    });
+    members = await presence.roomPresence(store.readRoom(h.room.code));
+    expect(members.find((member) => member.id === guest.room.me)).toMatchObject(
+      { active: false, connections: 0 },
+    );
+  });
+  it("reuses browser membership and revokes a guest without ending the room or dropping their request", async () => {
+    const h = room();
+    const guest = store.joinRoom(h.room.code, "Guest");
+    expect(
+      store.joinRoom(h.room.code, "Same browser", guest.token).room.me,
+    ).toBe(guest.room.me);
+    expect(store.readRoom(h.room.code).members).toHaveLength(2);
+    await orchestration.requestTrack(
+      h.room.code,
+      guest.token,
+      two,
+      randomUUID(),
+    );
+    await expect(
+      orchestration.leaveSession(h.room.code, guest.token),
+    ).resolves.toEqual({ left: true, ended: false });
+    expect(() => store.identify(h.room.code, guest.token)).toThrow(
+      "Join this room",
+    );
+    const state = await queue.queueState(h.room);
+    expect(state.ended).toBe(false);
+    expect(state.queue).toEqual([
+      expect.objectContaining({ memberId: guest.room.me }),
+    ]);
+    expect(store.identify(h.room.code, h.token).host).toBe(true);
+    expect(
+      store
+        .readRoom(h.room.code)
+        .members.find((member) => member.id === guest.room.me)?.leftAt,
+    ).toBeGreaterThan(0);
+    expect(
+      store.joinRoom(h.room.code, "Rejoined", guest.token).room.me,
+    ).not.toBe(guest.room.me);
+  });
+  it("ends durable playback automation before revoking the host", async () => {
+    const h = room();
+    await expect(
+      orchestration.leaveSession(h.room.code, h.token),
+    ).resolves.toEqual({ left: true, ended: true });
+    expect(store.readRoom(h.room.code).ended).toBe(true);
+    expect((await queue.queueState(h.room)).ended).toBe(true);
+    expect(storage.hasConnection(h.room.code)).toBe(false);
+    expect(() => store.identify(h.room.code, h.token)).toThrow(
+      "Join this room",
+    );
+  });
+  it("keeps host membership when ending the durable queue fails", async () => {
+    const h = room();
+    vi.spyOn(queue, "changeQueue").mockRejectedValueOnce(
+      new Error("Queue unavailable"),
+    );
+    await expect(
+      orchestration.leaveSession(h.room.code, h.token),
+    ).rejects.toThrow("Queue unavailable");
+    expect(store.identify(h.room.code, h.token).host).toBe(true);
+    expect(store.readRoom(h.room.code).ended).toBe(false);
+  });
+});
+
+it("revokes a departed member even when ephemeral presence cleanup fails", async () => {
+  const presence =
+    await import("@/features/listening-room/server/room-presence");
+  const h = room();
+  const guest = store.joinRoom(h.room.code, "Guest");
+  await presence.updatePresence(
+    h.room.code,
+    guest.room.me,
+    randomUUID(),
+    "online",
+  );
+  vi.spyOn(presence, "clearMemberPresence").mockRejectedValueOnce(
+    new Error("Presence unavailable"),
+  );
+  await expect(
+    orchestration.leaveSession(h.room.code, guest.token),
+  ).resolves.toEqual({ left: true, ended: false });
+  expect(() => store.identify(h.room.code, guest.token)).toThrow(
+    "Join this room",
+  );
+  const members = await presence.roomPresence(store.readRoom(h.room.code));
+  expect(members.find((member) => member.id === guest.room.me)).toMatchObject({
+    active: false,
+    connections: 0,
+  });
+});

@@ -24,6 +24,8 @@ Application versions were checked against the registry's stable `latest` tags an
 | Hook Form resolvers                           | 7.0.1   |
 | Valibot                                       | 1.5.0   |
 | Prettier                                      | 3.9.10  |
+| Motion                                        | 14.9.0  |
+| cn                                            | 0.5.1   |
 
 The complete dependency list is in `package.json` and `pnpm-lock.yaml`. Other dependencies were already at their current stable releases. Server and client package version numbers are independent; the Redis client does not need to share the server's major version.
 
@@ -62,3 +64,5 @@ Use `pnpm install --frozen-lockfile` for reproducible installation. After an int
 - [Next.js project-owned agent instructions](https://nextjs.org/docs/app/api-reference/config/next-config-js/agentRules)
 
 - [pnpm build-script policy](https://pnpm.io/settings/build#allowbuilds)
+
+The Rare UI OTP source is vendored in `src/shared/ui/otp-input.tsx`; shadcn 4.23.0 was used as an installation CLI and is not an application dependency. The component's motion features are dynamically imported. Its `cn` helper follows the installed registry's current dependency rather than adding a second class-name utility stack.

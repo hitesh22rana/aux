@@ -1,9 +1,11 @@
 import "server-only";
+import { clearMemberPresence } from "./room-presence";
 import {
   identify,
   readRoom,
   save,
   mutate,
+  revokeMembership,
   type Action,
 } from "@/features/listening-room/server/room-repository";
 import { AppError } from "@/shared/lib/errors";
@@ -213,4 +215,15 @@ export async function disconnectRoom(code: string, token: string | undefined) {
   );
   disconnect(code);
   save(readRoom(code));
+}
+
+export async function leaveSession(code: string, token: string | undefined) {
+  const member = identify(code, token);
+  const room = readRoom(code);
+  if (member.host && !room.ended)
+    await liveCommand(code, token, { type: "end" });
+  revokeMembership(code, token);
+  // Revocation is authoritative; ephemeral presence also expires if cleanup is unavailable.
+  await clearMemberPresence(code, member.id).catch(() => {});
+  return { left: true as const, ended: member.host || room.ended };
 }

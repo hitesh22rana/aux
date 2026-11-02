@@ -38,7 +38,8 @@ export function identify(code: string, token: string | undefined): Member {
     .prepare("SELECT member FROM sessions WHERE token=? AND code=?")
     .get(hash(token), code) as { member: string } | undefined;
   const member = s && readRoom(code).members.find((m) => m.id === s.member);
-  if (!member) throw new AppError("Join this room to continue.", 401);
+  if (!member || member.leftAt)
+    throw new AppError("Join this room to continue.", 401);
   return member;
 }
 export function view(room: Room, me: string): RoomView {
@@ -93,16 +94,24 @@ export function createRoom(name: string, person: string, provider: Provider) {
     return { room: view(room, member.id), token: session(code, member.id) };
   })();
 }
-export function joinRoom(code: string, name: string) {
+export function joinRoom(code: string, name: string, existingToken?: string) {
   return db.transaction(() => {
     const room = readRoom(code);
     if (room.ended) throw new AppError("This session has ended.", 410);
+    if (existingToken) {
+      try {
+        const existing = identify(code, existingToken);
+        return { room: view(room, existing.id), token: existingToken };
+      } catch (error) {
+        if (!(error instanceof AppError && error.status === 401)) throw error;
+      }
+    }
     if (room.locked)
       throw new AppError(
         "The host has locked this room. Ask them to unlock it.",
         403,
       );
-    if (room.members.length >= 12)
+    if (room.members.filter((member) => !member.leftAt).length >= 12)
       throw new AppError("This room is full (12 people).", 409);
     const member = {
       id: randomBytes(12).toString("hex"),
@@ -137,5 +146,22 @@ export function mutate(
     }
     save(room);
     return view(room, member.id);
+  })();
+}
+
+export function revokeMembership(code: string, token: string | undefined) {
+  return db.transaction(() => {
+    const member = identify(code, token);
+    const room = readRoom(code);
+    if (member.host && !room.ended)
+      throw new AppError("End the session before leaving.", 409);
+    const leaving = room.members.find((person) => person.id === member.id);
+    if (leaving) leaving.leftAt = Date.now();
+    db.prepare("DELETE FROM sessions WHERE code=? AND member=?").run(
+      code,
+      member.id,
+    );
+    save(room);
+    return member;
   })();
 }

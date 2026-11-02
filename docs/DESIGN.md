@@ -29,3 +29,11 @@ The desktop pairs a large two-line title with a sticky portrait image and a shor
 The initial audit measured a 26px desktop title, no images, and a 30% empty block. The revised page uses a 118px title at 1440px, a 64px phone title, and one dominant image. Desktop, tablet, and phone crops are reviewed in the browser. Motion uses a brief image settle, type entrances, control feedback, and section reveals; reduced-motion preferences keep everything static and readable.
 
 The inspector’s four-picture floor is explicitly waived for this compact room-entry page: one original image supports the split-stage concept, while extra pictures would add no useful content. No stock footage is added. The limited-motion and no-footage warnings are accepted to keep room entry quick and avoid an autoplay distraction.
+
+## Room entry and controls
+
+Room invitations use a dedicated loading state before showing a room or returning to the home page. The room header contains navigation, room settings, and invitations; joining another room remains a landing-page action. The search area uses its explanatory sentence instead of the former all-caps playback label.
+
+Room codes use the Rare UI `swamimalode07/rare-ui/otp-input` component, installed with the shadcn CLI. The shared primitive retains its slot transitions, keyboard handling, and paste support, with project-specific TypeScript guards, first-input refs for React Hook Form, error descriptions, read-only invite display, dark colors, and reduced-motion support. Motion features load lazily; the glyph renderer is separate from input behavior.
+
+People show Active now with a tab count, or Away for a saved membership without a recent heartbeat. Explicitly departed members remain in request attribution but leave the people view. The host action is labelled End session and leave so its effect on everyone is clear.

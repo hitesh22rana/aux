@@ -20,7 +20,7 @@ interface RoomDialogsProps {
   sessionBusy: boolean;
   onRoomReady: (room: RoomView) => void;
   onAction: (action: RoomAction) => Promise<void>;
-  onReset: () => void;
+  onLeave: () => Promise<boolean>;
 }
 export function RoomDialogs(props: RoomDialogsProps) {
   const onClose = () => props.onDialogChange(null);
@@ -56,7 +56,7 @@ export function RoomDialogs(props: RoomDialogsProps) {
           manual={props.manual}
           busy={props.sessionBusy}
           onAction={props.onAction}
-          onReset={props.onReset}
+          onLeave={props.onLeave}
         />
       );
     case "about":

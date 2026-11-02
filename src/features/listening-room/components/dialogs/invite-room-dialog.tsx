@@ -2,6 +2,7 @@
 
 import { Copy, Link2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { OtpInput } from "@/shared/ui/otp-input";
 import { toast } from "sonner";
 
 import type { RoomView } from "../../model/contracts";
@@ -43,8 +44,16 @@ export function InviteRoomDialog({
         />
       </div>
       <div className="invite-code-display">
-        <span>ROOM CODE</span>
-        <strong>{room.code}</strong>
+        <span>Room code</span>
+        <OtpInput
+          value={room.code}
+          type="both"
+          length={6}
+          size="sm"
+          readOnly
+          className="room-code-input"
+          aria-label="Room code"
+        />
       </div>
       <div className="invite-url">
         <input

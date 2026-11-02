@@ -12,6 +12,7 @@ import {
   readRoom,
   identify,
   joinRoom,
+  leaveSession,
 } from "@/features/listening-room/server";
 
 import {
@@ -41,7 +42,10 @@ export async function POST(request: NextRequest, context: Context) {
     checkOrigin(request);
     const code = v.parse(codeSchema, (await context.params).code.toUpperCase());
     const data = v.parse(joinRequestSchema, await request.json());
-    return withSession(joinRoom(code, data.name), request);
+    return withSession(
+      joinRoom(code, data.name, request.cookies.get(`aux_${code}`)?.value),
+      request,
+    );
   } catch (error) {
     return errorResponse(error);
   }
@@ -58,6 +62,28 @@ export async function PATCH(request: NextRequest, context: Context) {
         action,
       ),
     );
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function DELETE(request: NextRequest, context: Context) {
+  try {
+    checkOrigin(request);
+    const code = v.parse(codeSchema, (await context.params).code.toUpperCase());
+    const result = await leaveSession(
+      code,
+      request.cookies.get(`aux_${code}`)?.value,
+    );
+    const response = NextResponse.json(result);
+    response.cookies.set(`aux_${code}`, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: request.nextUrl.protocol === "https:",
+      path: "/",
+      maxAge: 0,
+    });
+    return response;
   } catch (error) {
     return errorResponse(error);
   }

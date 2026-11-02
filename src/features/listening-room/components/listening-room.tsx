@@ -1,5 +1,6 @@
 "use client";
 import { RoomHeader, RoomHeading, type RoomTab } from "./room-layout";
+import { RoomEntryLoader } from "./room-entry-loader";
 import { RoomLanding } from "./room-landing";
 import { RoomWorkspace } from "./room-workspace";
 import styles from "../listening-room.module.css";
@@ -12,7 +13,11 @@ import { type RoomAction } from "@/features/listening-room/model/contracts";
 import { RoomDialogs, type RoomDialog as Dialog } from "./room-dialogs";
 import { useRoomSession } from "../hooks/use-room-session";
 
-export function ListeningRoom() {
+export function ListeningRoom({
+  initialRoomCode,
+}: {
+  initialRoomCode?: string;
+}) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [tab, setTab] = useState<RoomTab>("queue");
   const [joinCode, setJoinCode] = useState("");
@@ -22,7 +27,7 @@ export function ListeningRoom() {
     setJoinCode(code);
     setDialog("join");
   }, []);
-  const session = useRoomSession(onJoinRequired);
+  const session = useRoomSession(onJoinRequired, initialRoomCode);
   const {
     room,
     real,
@@ -36,6 +41,8 @@ export function ListeningRoom() {
     setActiveRoom,
     action: roomAction,
     resetSession,
+    leaveSession,
+    resolving,
   } = session;
   const busy = sessionBusy;
   async function action(value: RoomAction) {
@@ -59,7 +66,9 @@ export function ListeningRoom() {
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      {!real ? (
+      {resolving ? (
+        <RoomEntryLoader />
+      ) : !real ? (
         <RoomLanding
           ready={ready}
           error={entryError}
@@ -149,7 +158,13 @@ export function ListeningRoom() {
         sessionBusy={busy}
         onRoomReady={setActiveRoom}
         onAction={action}
-        onReset={reset}
+        onLeave={async () => {
+          if (await leaveSession()) {
+            reset();
+            return true;
+          }
+          return false;
+        }}
       />
     </div>
   );

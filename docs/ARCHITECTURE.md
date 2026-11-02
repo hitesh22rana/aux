@@ -105,8 +105,18 @@ The header has one Room settings entry, visible on desktop and mobile. Queue and
 
 ## Home and invitation navigation
 
-The root URL always opens the landing page. Room restoration requires an explicit `?room=CODE` query; a previously stored room code never redirects a home visit. The home wordmark clears the active browser view without ending the shared session. A member can reopen an active room through its invitation URL.
+The root URL always opens the landing page. Room restoration requires an explicit `?room=CODE` query; a previously stored room code never redirects a home visit. The home wordmark clears the active browser view without ending the shared session. A member can reopen an active room through its invitation URL. Valid six-character invitation URLs render a dedicated loading state from the initial server response, without flashing the landing page. The room appears after validation; missing, closed, invalid, or failed invitations return to the home URL.
 
 An explicit invitation opens the join dialog only when the API returns HTTP 401. Closed rooms return HTTP 410; invalid or expired invitations show a message on the landing page. Connectivity failures show a retry message rather than opening a form. The HTTP client retains response status in `HttpError` so navigation does not infer status from message text.
 
 The root HTML element uses `suppressHydrationWarning` only for attributes injected by browser extensions such as LanguageTool. Hydration validation remains enabled for body content and application components.
+
+## Presence and leaving
+
+Browser membership and tab presence are separate. An HTTP-only room cookie identifies a saved browser membership. Each mounted tab creates a distinct connection ID, heartbeats every 20 seconds, and sends a best-effort page-hide beacon. Redis expires presence after 90 seconds without a heartbeat. Closing one tab preserves presence from other tabs; suspended or disconnected memberships display as Away. A brief tombstone prevents an in-flight heartbeat from reviving a closed connection. Returning from the browser back/forward cache creates a fresh connection ID.
+
+The people view shows active tab counts and saved memberships that are away. Explicitly departed memberships are excluded from the people list and capacity checks, while their identity remains available to attribute accepted requests. Presence never grants permissions; all mutations still authorize the cookie-backed membership on the server.
+
+`DELETE /api/rooms/:code` leaves a room and revokes that browser's room session across its tabs. For a guest it preserves the room and accepted requests. For a host it first ends the durable queue, stops future dispatch, and disconnects the integration, then revokes membership. A durable-queue failure leaves the host's membership intact. Explicit leave differs from a tab closing, a refresh, or a temporary outage; those do not automatically end a hosted room.
+
+Desktop columns share the document scroll. A ResizeObserver records the request column's height. Its sticky offset allows normal scrolling until the form reaches the viewport bottom, then holds the column while the taller player rail finishes. Phones use normal stacked scrolling. There is no nested scroll region or scroll-event animation.

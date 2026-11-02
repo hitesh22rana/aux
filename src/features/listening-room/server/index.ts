@@ -16,6 +16,7 @@ export {
   disconnectRoom,
   inRoom,
   liveCommand,
+  leaveSession,
 } from "./room-service";
 export {
   requestLinkedTrack,
@@ -43,3 +44,4 @@ export {
 export { queueKeys } from "./queue-keys";
 export { runWorker } from "./playback-worker";
 export { changeQueue, liveView } from "./live-queue";
+export { updatePresence } from "./room-presence";

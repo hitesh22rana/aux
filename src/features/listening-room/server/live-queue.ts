@@ -1,4 +1,5 @@
 import "server-only";
+import { roomPresence } from "./room-presence";
 import { randomUUID } from "node:crypto";
 import { redis } from "@/server/redis/connection";
 import { queueKeys } from "@/features/listening-room/server/queue-keys";
@@ -94,12 +95,14 @@ export async function changeQueue<T>(
 }
 export async function liveView(room: Room, me: string): Promise<RoomView> {
   const client = await redis();
-  const [state, worker] = await Promise.all([
+  const [state, worker, members] = await Promise.all([
     queueState(room),
     client.exists(queueKeys.heartbeat),
+    roomPresence(room),
   ]);
   return {
     ...room,
+    members,
     queue: state.queue,
     tracks: state.tracks,
     current: state.current,

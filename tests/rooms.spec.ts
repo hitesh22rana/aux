@@ -86,7 +86,9 @@ test("host and member share durable requests and enforce room permissions", asyn
       })
     ).status(),
   ).toBe(403);
-  await h.getByRole("button", { name: "End the session", exact: true }).click();
+  await h
+    .getByRole("button", { name: "End session and leave", exact: true })
+    .click();
   await expect(g.locator(".ended-banner")).toBeVisible({ timeout: 8000 });
   await host.close();
   await guest.close();
@@ -671,4 +673,171 @@ test("extension-added root attributes do not cause hydration warnings", async ({
       /hydrat|didn.t match|server rendered/i.test(message),
     ),
   ).toEqual([]);
+});
+
+test("invitation loading blocks the landing page until the room is resolved", async ({
+  page,
+}) => {
+  const code = await createRoom(page);
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(`**/api/rooms/${code}`, async (route) => {
+    if (route.request().method() === "GET") await gate;
+    await route.continue();
+  });
+  await page.goto(`/?room=${code}`);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Opening your room" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Pass the aux." }),
+  ).toHaveCount(0);
+  release();
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Join a room", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("guest tabs share presence and explicit leave revokes their browser session", async ({
+  browser,
+}) => {
+  const host = await browser.newContext();
+  const guests = await browser.newContext();
+  const h = await host.newPage();
+  const code = await createRoom(h);
+  const g = await guests.newPage();
+  await g.goto(h.url());
+  await g
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Presence guest");
+  await g.getByRole("button", { name: "Join the room", exact: true }).click();
+  await expect(g.getByRole("dialog")).toHaveCount(0);
+  const second = await guests.newPage();
+  await second.goto(`/?room=${code}`);
+  await expect(
+    second.getByRole("button", { name: "Room settings", exact: true }),
+  ).toBeVisible();
+  const guest = (await (await guests.request.get(`/api/rooms/${code}`)).json())
+    .me;
+  await expect
+    .poll(async () => {
+      const room = await (await host.request.get(`/api/rooms/${code}`)).json();
+      return room.members.find((member: { id: string }) => member.id === guest)
+        ?.connections;
+    })
+    .toBe(2);
+  await second.close();
+  await expect
+    .poll(async () => {
+      const room = await (await host.request.get(`/api/rooms/${code}`)).json();
+      return room.members.find((member: { id: string }) => member.id === guest)
+        ?.connections;
+    })
+    .toBe(1);
+  await g.getByRole("button", { name: "Room settings", exact: true }).click();
+  await expect(
+    g.getByRole("button", { name: "End session and leave", exact: true }),
+  ).toHaveCount(0);
+  await g.getByRole("button", { name: "Leave room", exact: true }).click();
+  await expect(g.getByRole("heading", { name: "Pass the aux." })).toBeVisible();
+  expect((await guests.request.get(`/api/rooms/${code}`)).status()).toBe(401);
+  expect((await host.request.get(`/api/rooms/${code}`)).status()).toBe(200);
+  await host.close();
+  await guests.close();
+});
+
+test("closing the last tab marks a retained membership away", async ({
+  browser,
+}) => {
+  const host = await browser.newContext();
+  const guest = await browser.newContext();
+  const h = await host.newPage();
+  const code = await createRoom(h);
+  const g = await guest.newPage();
+  await g.goto(h.url());
+  await g
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Away guest");
+  await g.getByRole("button", { name: "Join the room", exact: true }).click();
+  await expect(g.getByRole("dialog")).toHaveCount(0);
+  const me = (await (await guest.request.get(`/api/rooms/${code}`)).json()).me;
+  await expect
+    .poll(async () => {
+      const room = await (await host.request.get(`/api/rooms/${code}`)).json();
+      return room.members.find((member: { id: string }) => member.id === me)
+        ?.active;
+    })
+    .toBe(true);
+  await g.close();
+  await expect
+    .poll(async () => {
+      const room = await (await host.request.get(`/api/rooms/${code}`)).json();
+      return room.members.find((member: { id: string }) => member.id === me)
+        ?.active;
+    })
+    .toBe(false);
+  await h.getByRole("button", { name: /The people/ }).click();
+  await expect(
+    h
+      .locator(".member-card")
+      .filter({ hasText: "Away guest" })
+      .getByText("Away", { exact: true }),
+  ).toBeVisible();
+  await host.close();
+  await guest.close();
+});
+
+test("the centre column stops at the form while the taller side panel continues", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await createRoom(page);
+  const left = page.locator(".left-column"),
+    right = page.locator(".right-column");
+  const geometry = await left.evaluate((element) => ({
+    top: element.getBoundingClientRect().top + scrollY,
+    height: element.getBoundingClientRect().height,
+  }));
+  await page.evaluate(
+    (y) => scrollTo(0, y),
+    geometry.top + geometry.height - 876,
+  );
+  const beforeLeft = await left.boundingBox();
+  const beforeRight = await right.boundingBox();
+  await page.evaluate(() => scrollBy(0, 60));
+  const afterLeft = await left.boundingBox();
+  const afterRight = await right.boundingBox();
+  expect(beforeLeft).not.toBeNull();
+  expect(afterLeft).not.toBeNull();
+  expect(
+    Math.abs(
+      afterLeft!.y + afterLeft!.height - (beforeLeft!.y + beforeLeft!.height),
+    ),
+  ).toBeLessThan(3);
+  expect(afterRight!.y).toBeLessThan(beforeRight!.y - 30);
+});
+
+test("room code slots accept paste, correction and keyboard navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Join a room", exact: true }).click();
+  const first = page.getByRole("textbox", { name: "Room code", exact: true });
+  await first.fill("ab12cd");
+  const slots = page.locator('[data-slot="otp-input-slot"]');
+  await expect(slots).toHaveCount(6);
+  await expect(slots.nth(0)).toHaveValue("A");
+  await expect(slots.nth(5)).toHaveValue("D");
+  await slots.nth(5).press("Backspace");
+  await expect(slots.nth(5)).toHaveValue("");
+  await slots.nth(5).fill("e");
+  await expect(slots.nth(5)).toHaveValue("E");
+  await slots.nth(5).press("ArrowLeft");
+  await expect(slots.nth(4)).toBeFocused();
+  await page.screenshot({ path: "test-results/aux-room-code.png" });
 });

@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   ArrowDown,
   ArrowRight,
-  ArrowUp,
   AudioLines,
   Copy,
   Disc3,
@@ -72,7 +71,13 @@ export function RoomHeader({
               <Icon size={16} />
               {label}
               {value === "people" && (
-                <span className="nav-count">{room.members.length}</span>
+                <span className="nav-count">
+                  {
+                    room.members.filter(
+                      (member) => member.active && !member.leftAt,
+                    ).length
+                  }
+                </span>
               )}
             </button>
           ))}
@@ -81,13 +86,6 @@ export function RoomHeader({
           <span className="session-kind">
             {real ? "Shared session" : "Listen together"}
           </span>
-          <button
-            className="text-button join-action"
-            onClick={() => openDialog("join")}
-          >
-            Join a room
-            <ArrowUp size={14} className="rotate-45" />
-          </button>
           {real && !room.ended && (
             <button
               className="text-button room-settings-action"
@@ -198,13 +196,22 @@ export function RoomSummary({ room, real }: { room: RoomView; real: boolean }) {
     <section className="room-summary" aria-label="Current room">
       <div className="room-members">
         <div className="avatar-stack">
-          {room.members.slice(0, 4).map((member) => (
-            <span key={member.id} style={{ background: member.color }}>
-              {member.name[0]}
-            </span>
-          ))}
+          {room.members
+            .filter((member) => !member.leftAt)
+            .slice(0, 4)
+            .map((member) => (
+              <span key={member.id} style={{ background: member.color }}>
+                {member.name[0]}
+              </span>
+            ))}
         </div>
-        <span>{room.members.length} in the room</span>
+        <span>
+          {
+            room.members.filter((member) => member.active && !member.leftAt)
+              .length
+          }{" "}
+          active in the room
+        </span>
       </div>
       <div className="summary-detail">
         <Headphones size={15} />

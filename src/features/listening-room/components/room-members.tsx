@@ -13,17 +13,18 @@ export function RoomMembers({
   real: boolean;
   openDialog: (dialog: RoomDialog) => void;
 }) {
+  const members = room.members.filter((member) => !member.leftAt);
+  const active = members.filter((member) => member.active).length;
   return (
     <section className="members-section">
       <div className="section-heading">
         <div>
           <h2>
-            Everyone in the room{" "}
-            <span className="count-pill">{room.members.length}</span>
+            Everyone in the room <span className="count-pill">{active}</span>
           </h2>
           <p>
             {real
-              ? "Your room fits up to 12 music lovers."
+              ? `${active} active · ${members.length} joined. Saved sessions show as away when disconnected.`
               : "Invite people to start listening together."}
           </p>
         </div>
@@ -36,7 +37,7 @@ export function RoomMembers({
         </button>
       </div>
       <div className="members-grid">
-        {room.members.map((m) => (
+        {members.map((m) => (
           <div key={m.id} className="member-card">
             <span className="avatar large" style={{ background: m.color }}>
               {m.name[0]}
@@ -45,6 +46,11 @@ export function RoomMembers({
               {m.name}
               {m.id === room.me ? " (you)" : ""}
             </h3>
+            <p className={`member-presence ${m.active ? "active" : "away"}`}>
+              {m.active
+                ? `Active now · ${m.connections ?? 1} ${(m.connections ?? 1) === 1 ? "tab" : "tabs"}`
+                : "Away"}
+            </p>
             <p>
               {m.host ? "Host · keeper of the aux" : "Member · excellent taste"}
             </p>

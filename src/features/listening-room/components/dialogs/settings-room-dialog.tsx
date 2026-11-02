@@ -13,7 +13,7 @@ interface SettingsRoomDialogProps {
   manual: boolean;
   busy: boolean;
   onAction: (action: RoomAction) => Promise<void>;
-  onReset: () => void;
+  onLeave: () => Promise<boolean>;
 }
 function playbackNote(live: boolean, manual: boolean): string {
   if (!live) return "Create or join a room to manage playback.";
@@ -29,7 +29,7 @@ export function SettingsRoomDialog({
   manual,
   busy,
   onAction: action,
-  onReset: reset,
+  onLeave,
 }: SettingsRoomDialogProps) {
   return (
     <RoomModal
@@ -78,24 +78,21 @@ export function SettingsRoomDialog({
       </div>
       <div className="form-note mt-4">
         <Headphones size={17} />
-        <span>{playbackNote(live, manual)}</span>
+        <span>
+          {playbackNote(live, manual)}
+          {isHost && !room.ended && " Leaving ends this session for everyone."}
+        </span>
       </div>
       <div className="flex gap-3 mt-6">
-        {isHost && !room.ended && (
-          <button
-            className="button danger flex-1"
-            disabled={busy}
-            onClick={async () => {
-              await action({ type: "end" });
-              onClose();
-            }}
-          >
-            End the session
-          </button>
-        )}
-        <button className="button secondary flex-1" onClick={reset}>
+        <button
+          className={`button ${isHost && !room.ended ? "danger" : "secondary"} flex-1`}
+          disabled={busy}
+          onClick={async () => {
+            if (await onLeave()) onClose();
+          }}
+        >
           <DoorOpen size={16} />
-          Leave room
+          {isHost && !room.ended ? "End session and leave" : "Leave room"}
         </button>
       </div>
     </RoomModal>

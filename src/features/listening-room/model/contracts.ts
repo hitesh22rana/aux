@@ -17,6 +17,9 @@ export const memberSchema = v.object({
   name: v.string(),
   color: v.string(),
   host: v.boolean(),
+  active: v.optional(v.boolean()),
+  connections: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0))),
+  leftAt: v.optional(v.number()),
 });
 export const queueItemSchema = v.object({
   id: v.string(),

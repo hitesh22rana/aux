@@ -186,6 +186,14 @@
   }
   /* At 1440px: 1208px canvas = 860px queue + 28px gutter + 320px player. */
   :global(.left-column),
+  :global(.left-column) {
+    position: sticky;
+    top: min(96px, calc(100dvh - var(--room-column-height, 100dvh) - 24px));
+    align-self: start;
+  }
+  :global(.member-presence.away) {
+    color: var(--muted);
+  }
   :global(.right-column) {
     min-width: 0;
   }
@@ -801,6 +809,28 @@
   :global(.form-stack) :global(.form-field) input[aria-invalid="true"] {
     border-color: var(--negative);
   }
+  :global(.form-stack)
+    :global(.room-code-input)
+    input[data-slot="otp-input-slot"],
+  :global(.room-code-input) input[data-slot="otp-input-slot"] {
+    width: 40px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0;
+    color: transparent;
+    background: var(--raised);
+    border: 1px solid var(--control);
+    border-radius: 8px;
+  }
+  :global(.room-code-input) [data-slot="otp-input-char"] {
+    color: var(--ink);
+  }
+  :global(.room-code-input) [data-slot="otp-input-caret"] {
+    background: var(--ink);
+  }
+  :global(.member-presence.active) {
+    color: #b9dba4;
+  }
   :global(.form-stack) fieldset {
     border: 0;
     padding: 0;
@@ -1399,6 +1429,10 @@
     }
     :global(.invite-heading) svg {
       display: none;
+    }
+    :global(.left-column) {
+      position: static;
+      top: auto;
     }
     :global(.workspace-grid) {
       display: flex;

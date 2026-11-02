@@ -1,0 +1,20 @@
+.loader {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  color: var(--ink);
+  font-size: 16px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .loader svg {
+    animation: spin 1000ms linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

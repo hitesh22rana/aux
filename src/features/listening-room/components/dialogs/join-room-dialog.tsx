@@ -1,9 +1,10 @@
 "use client";
-import { useForm } from "react-hook-form";
+import { useController, useForm } from "react-hook-form";
 import { valibotResolver } from "@hookform/resolvers/valibot";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { errorMessage } from "@/shared/api/http-client";
+import { OtpInput } from "@/shared/ui/otp-input";
 import { FormField, FieldError } from "@/shared/ui/form-field";
 import { roomRequest } from "../../api/room-client";
 import { joinRoomSchema } from "../../model/form-schemas";
@@ -23,6 +24,7 @@ export function JoinRoomDialog({
 }: JoinRoomDialogProps) {
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
@@ -31,6 +33,7 @@ export function JoinRoomDialog({
     defaultValues: { code: initialJoinCode, person: "" },
     mode: "onTouched",
   });
+  const { field } = useController({ name: "code", control });
   const busy = sessionBusy || isSubmitting;
   const join = handleSubmit(async ({ code, person }) => {
     try {
@@ -57,14 +60,20 @@ export function JoinRoomDialog({
           required
           error={errors.code?.message}
         >
-          <input
-            id="join-code"
-            {...register("code")}
-            className="code-input"
-            placeholder="A1B2C3"
-            autoCapitalize="characters"
-            autoComplete="off"
-            spellCheck={false}
+          <OtpInput
+            inputId="join-code"
+            inputName={field.name}
+            inputRef={field.ref}
+            length={6}
+            type="both"
+            value={field.value.toUpperCase()}
+            onChange={(value) => field.onChange(value.toUpperCase())}
+            onBlur={field.onBlur}
+            size="sm"
+            disabled={busy}
+            status={errors.code ? "error" : "idle"}
+            className="room-code-input"
+            aria-label="Room code"
             aria-required="true"
             aria-invalid={!!errors.code}
             aria-describedby={errors.code ? "join-code-error" : undefined}

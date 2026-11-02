@@ -1,0 +1,2 @@
+export const PRESENCE_WINDOW_MS = 90_000;
+export const PRESENCE_HEARTBEAT_MS = 20_000;
