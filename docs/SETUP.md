@@ -188,3 +188,8 @@ avatars, and sharing panels show the remaining time on the original 24-hour room
 For public hosting, configure the reverse proxy to replace forwarded host headers,
 serve HTTPS, and enforce request timeouts and rate limits. The app bounds JSON
 mutation bodies to 16 KiB and validates each request with Valibot.
+
+For developer enrollment, minimum permissions, credentials, callbacks, current
+access gates and production requirements for all eight services, see the
+[provider integration guide](PROVIDER-INTEGRATION-GUIDE.md). It explicitly separates
+existing setup from proposed connector configuration.

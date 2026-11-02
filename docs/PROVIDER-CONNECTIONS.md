@@ -1,8 +1,9 @@
 # Provider connection plan
 
-Status: proposed implementation plan. Only the upper-right presence-badge fix is
-implemented by this change. Existing Spotify connection and playback support remain
-in place; this document does not announce new provider integrations.
+Status: proposed implementation plan. Existing Spotify connection and playback
+support remain in place; additional account connectors have not shipped. See the
+[provider integration guide](PROVIDER-INTEGRATION-GUIDE.md) for detailed enrollment,
+credentials, scopes, callbacks, lifecycle requirements and sources for all eight services.
 
 Reviewed against official documentation on 3 November 2026.
 
@@ -149,3 +150,11 @@ connector is implemented or advertised until its acceptance checks pass.
 - [Amazon Music V1 overview and approval](https://developer.amazon.com/docs/music/API_web_overview.html)
 - [Amazon Music V2 preview and enrollment](https://developer.amazon.com/docs/music/API_web_overview_v2.html)
 - [YouTube Data API supported resources and OAuth](https://developers.google.com/youtube/v3/getting-started)
+
+Further research found an additional Amazon gate: its documented Web Playback API
+requires Amazon-controlled playback queue order and lifecycle-event reporting.
+That client model conflicts with Aux simply owning the queue and controlling an
+existing native player. Approval alone does not resolve that incompatibility.
+SoundCloud now documents Artist Pro as a developer app-registration requirement;
+Deezer staff have announced restrictions on new individual API access, with no
+reopening verified in this research. Refer to the integration guide for sources.
