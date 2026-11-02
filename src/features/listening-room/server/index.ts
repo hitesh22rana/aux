@@ -1,5 +1,6 @@
 import "server-only";
 export {
+  browserSessions,
   createRoom,
   joinRoom,
   mutate,

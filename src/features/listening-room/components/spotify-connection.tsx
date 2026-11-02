@@ -28,12 +28,7 @@ export function SpotifyConnection({
         {connected && <span className="connection-dot" />}
       </div>
       <p>{connectionDescription(connected, device, host)}</p>
-      <ConnectionNotices
-        room={room}
-        host={host}
-        status={status}
-        error={error}
-      />
+      <ConnectionNotices room={room} error={error} />
       <ConnectionActions
         room={room}
         host={host}
@@ -65,18 +60,10 @@ function connectionDescription(
 }
 function ConnectionNotices({
   room,
-  host,
-  status,
   error,
-}: Pick<ConnectionState, "host" | "status" | "error"> & { room: RoomView }) {
+}: Pick<ConnectionState, "error"> & { room: RoomView }) {
   return (
     <>
-      {status && !status.configured && host && (
-        <div className="connection-setup">
-          Spotify setup is needed on this server. Follow the README to add your
-          app credentials.
-        </div>
-      )}
       {(error || room.playback?.error) && (
         <p className="connection-error" role="status">
           {error || room.playback?.error}

@@ -1,18 +1,8 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import type { RoomView } from "../model/contracts";
-import type { RoomDialog } from "./room-dialogs";
 
-export function RoomMembers({
-  room,
-  real,
-  openDialog,
-}: {
-  room: RoomView;
-  real: boolean;
-  openDialog: (dialog: RoomDialog) => void;
-}) {
+export function RoomMembers({ room, real }: { room: RoomView; real: boolean }) {
   const members = room.members.filter((member) => !member.leftAt);
   const active = members.filter((member) => member.active).length;
   return (
@@ -28,13 +18,6 @@ export function RoomMembers({
               : "Invite people to start listening together."}
           </p>
         </div>
-        <button
-          className="button secondary"
-          onClick={() => openDialog(real ? "invite" : "create")}
-        >
-          <Plus size={16} />
-          Invite
-        </button>
       </div>
       <div className="members-grid">
         {members.map((m) => (

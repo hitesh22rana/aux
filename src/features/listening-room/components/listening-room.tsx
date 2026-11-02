@@ -43,6 +43,7 @@ export function ListeningRoom({
     resetSession,
     leaveSession,
     resolving,
+    openRoom,
   } = session;
   const busy = sessionBusy;
   async function action(value: RoomAction) {
@@ -53,8 +54,8 @@ export function ListeningRoom({
     setMenu(false);
     setDialog(value);
   }
-  function reset() {
-    resetSession();
+  function reset(updateUrl = true) {
+    resetSession(updateUrl);
     setDialog(null);
     setTab("queue");
     setMenu(false);
@@ -75,13 +76,14 @@ export function ListeningRoom({
           onCreate={() => openDialog("create")}
           onJoin={() => openDialog("join")}
           onAbout={() => openDialog("about")}
+          onSessions={() => openDialog("sessions")}
         />
       ) : (
         <>
           <RoomHeader
             room={room}
             real={real}
-            onHome={reset}
+            onHome={() => reset(false)}
             tab={tab}
             menu={menu}
             onTabChange={(value) => {
@@ -158,6 +160,10 @@ export function ListeningRoom({
         sessionBusy={busy}
         onRoomReady={setActiveRoom}
         onAction={action}
+        onResume={(code) => {
+          setDialog(null);
+          void openRoom(code);
+        }}
         onLeave={async () => {
           if (await leaveSession()) {
             reset();

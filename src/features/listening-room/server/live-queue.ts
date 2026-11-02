@@ -155,11 +155,6 @@ export async function addToQueue(
         state.active?.trackId === track.id
       )
         throw new AppError("That song is already playing or queued.", 409);
-      if (state.queue.filter((q) => q.memberId === member).length >= 3)
-        throw new AppError(
-          "You have 3 songs queued. Give everyone a turn.",
-          409,
-        );
       state.tracks[track.id] = track;
       state.queue.push({
         id: randomUUID(),

@@ -165,3 +165,31 @@ export function revokeMembership(code: string, token: string | undefined) {
     return member;
   })();
 }
+
+export function browserSessions(
+  cookies: readonly { name: string; value: string }[],
+) {
+  const sessions = [];
+  for (const cookie of cookies) {
+    const code = /^aux_([A-F0-9]{6})$/.exec(cookie.name)?.[1];
+    if (!code) continue;
+    try {
+      const room = readRoom(code);
+      if (room.ended) continue;
+      const member = identify(code, cookie.value);
+      sessions.push({
+        code: room.code,
+        name: room.name,
+        provider: room.provider,
+        host: member.host,
+        expiresAt: room.createdAt + 86400000,
+      });
+    } catch (error) {
+      if (!(
+        error instanceof AppError && [401, 404, 410].includes(error.status)
+      ))
+        throw error;
+    }
+  }
+  return sessions.sort((a, b) => b.expiresAt - a.expiresAt);
+}

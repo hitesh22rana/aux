@@ -124,7 +124,7 @@ Queue delivery is at-least-once internally. Spotify offers no external idempoten
 
 - **No audio is streamed, proxied, downloaded, or decoded by Aux.** The adapter uses Spotify search, track lookup, playback state, and single-track start/pause/resume endpoints. It does not call Spotify’s native queue endpoint.
 - Pending requests can be removed or reordered in Aux. A Spotify request is briefly locked while being dispatched. A handoff request is locked while selected and is consumed only on host confirmation.
-- Votes express preference; they do not automatically reorder the queue. Each person may have up to three pending requests. In handoff rooms, a queued request is consumed only after host confirmation. Rooms fit 12 members and expire after 24 hours.
+- Votes express preference; they do not automatically reorder the queue. There is no per-person pending-song cap. In handoff rooms, a queued request is consumed only after host confirmation. Rooms fit 12 members and expire after 24 hours.
 - The worker advances when observed playback indicates a track finished near its expected end. Spotify has no completion webhook in this flow: polling is approximate, transitions may have gaps, and pausing near a song’s end is inherently ambiguous. Mid-song manual changes pause Aux automation instead of overriding the host. Use the host controls to continue.
 - If Redis is unavailable, live operations fail rather than accepting requests into temporary memory. If the worker is offline, already accepted requests remain saved and the UI reports its status. Keep the worker supervised in deployment.
 - Ending or disconnecting stops future Aux dispatches; it does not clear Spotify’s existing context or necessarily stop an in-flight/current song. Leaving the browser view does not end the room.
@@ -171,3 +171,9 @@ A room membership belongs to the browser's HTTP-only room cookie, and multiple t
 Guests can leave from Room settings. Leaving revokes that browser's membership across its tabs; accepted requests remain in the queue. Hosts choose End session and leave, which closes the shared queue for everyone before revoking the host session. It does not stop audio in a handoff app. Merely closing a tab or returning to the home view does not end the shared session.
 
 The optional shadcn CLI configuration in `components.json` maps generated primitives into `src/shared/ui` and helpers into `src/shared/lib`. The room-code component was installed with `npx shadcn@latest add swamimalode07/rare-ui/otp-input --yes -c .`; the explicit cwd is needed because pnpm declares this project as a workspace.
+
+## Returning to rooms
+
+Choose **Your sessions** beside Create a room on the home page to see rooms this browser is still authorized to access. The list checks HTTP-only room cookies against server membership, expiry, and room status. It does not discover other users’ rooms or depend on client-stored room codes. Returning home or refreshing preserves membership; explicitly leaving removes it. Ended and expired rooms are excluded. Resume opens the same invitation-loading flow as a direct room URL.
+
+There is no per-person pending-song limit. The existing session-wide budget of 1,000 accepted request IDs remains to bound the durable deduplication record. Duplicate songs, paused requests, membership permissions, 12-member capacity, and 24-hour room expiry still apply.

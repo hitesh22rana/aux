@@ -1,6 +1,6 @@
 "use client";
 
-import { DoorOpen, Headphones, ListMusic, ShieldCheck } from "lucide-react";
+import { DoorOpen, Headphones, ListMusic } from "lucide-react";
 
 import type { RoomView, RoomAction } from "../../model/contracts";
 
@@ -41,28 +41,23 @@ export function SettingsRoomDialog({
           : "Your host manages playback and room settings."
       }
     >
-      <div className="settings-row">
-        <div>
-          <b>Pause new requests</b>
-          <p>Lock joining and guest song requests.</p>
+      {isHost && (
+        <div className="settings-row">
+          <div>
+            <b>Pause new requests</b>
+            <p>Lock joining and guest song requests.</p>
+          </div>
+          <button
+            aria-label="Pause new requests"
+            aria-pressed={room.locked}
+            className={`toggle ${room.locked ? "on" : ""}`}
+            disabled={!isHost || busy || room.ended}
+            onClick={() => action({ type: "lock" })}
+          >
+            <span />
+          </button>
         </div>
-        <button
-          aria-label="Pause new requests"
-          aria-pressed={room.locked}
-          className={`toggle ${room.locked ? "on" : ""}`}
-          disabled={!isHost || busy || room.ended}
-          onClick={() => action({ type: "lock" })}
-        >
-          <span />
-        </button>
-      </div>
-      <div className="settings-row">
-        <div>
-          <b>Make room for everyone</b>
-          <p>Up to 3 queued songs per person.</p>
-        </div>
-        <ShieldCheck size={20} />
-      </div>
+      )}
       <div className="settings-row">
         <div>
           <b>Queue order</b>

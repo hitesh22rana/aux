@@ -128,7 +128,7 @@ test("mobile room has real empty states, one settings entry and working navigati
   ).toBe(true);
 });
 
-test("API validates requests, limits the queue and rejects ended sessions", async ({
+test("API validates requests, rejects duplicates and closes ended sessions", async ({
   playwright,
 }) => {
   const host = await playwright.request.newContext({
@@ -189,7 +189,7 @@ test("API validates requests, limits the queue and rejects ended sessions", asyn
     (
       await host.post(`/api/rooms/${code}/handoff`, { data: request("459") })
     ).status(),
-  ).toBe(409);
+  ).toBe(200);
   expect(
     (await host.patch(`/api/rooms/${code}`, { data: { type: "end" } })).ok(),
   ).toBe(true);
@@ -209,7 +209,7 @@ test("API validates requests, limits the queue and rejects ended sessions", asyn
   await stranger.dispose();
 });
 
-test("live rooms use the Aux queue and explain missing Spotify configuration", async ({
+test("live rooms use the Aux queue without connector setup instructions", async ({
   page,
 }) => {
   await page.goto("/");
@@ -232,7 +232,7 @@ test("live rooms use the Aux queue and explain missing Spotify configuration", a
   ).toBeVisible();
   await expect(
     page.getByText("Spotify setup is needed on this server.", { exact: false }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await page.screenshot({
     path: "test-results/aux-live-queue.png",
     fullPage: true,
@@ -840,4 +840,177 @@ test("room code slots accept paste, correction and keyboard navigation", async (
   await slots.nth(5).press("ArrowLeft");
   await expect(slots.nth(4)).toBeFocused();
   await page.screenshot({ path: "test-results/aux-room-code.png" });
+});
+
+test("saved host sessions can be resumed from home and stay private to their browser", async ({
+  page,
+  browser,
+}) => {
+  const code = await createRoom(page);
+  const stranger = await browser.newContext();
+  expect(
+    (
+      await (
+        await stranger.request.get("http://127.0.0.1:3000/api/rooms")
+      ).json()
+    ).sessions,
+  ).toEqual([]);
+  await page.getByRole("link", { name: "Aux home" }).click();
+  await page
+    .getByRole("button", { name: "Your sessions", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Your sessions" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Resume The listening room", exact: true })
+    .click();
+  await expect(page).toHaveURL(new RegExp(`room=${code}`));
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Aux home" }).click();
+  await expect(
+    page.getByRole("button", { name: "Your sessions", exact: true }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Room settings", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "End session and leave", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Your sessions", exact: true })
+    .click();
+  await expect(
+    page.getByText("No active sessions in this browser.", { exact: false }),
+  ).toBeVisible();
+  await stranger.close();
+});
+
+test("member settings hide host actions while server authorization remains enforced", async ({
+  browser,
+}) => {
+  const host = await browser.newContext();
+  const guest = await browser.newContext();
+  const h = await host.newPage();
+  const code = await createRoom(h, "Spotify");
+  const g = await guest.newPage();
+  await g.goto(h.url());
+  await g
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Member");
+  await g.getByRole("button", { name: "Join the room", exact: true }).click();
+  await expect(
+    g.getByRole("button", { name: "Skip to next song", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    g.getByRole("button", {
+      name: /Pause Spotify playback|Resume Spotify playback/,
+    }),
+  ).toHaveCount(0);
+  await g.getByRole("button", { name: "Room settings", exact: true }).click();
+  await expect(
+    g.getByRole("button", { name: "Pause new requests", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    g.getByRole("button", { name: "End session and leave", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    g.getByText("Up to 3 queued songs per person.", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    g.getByRole("button", { name: "Leave room", exact: true }),
+  ).toBeVisible();
+  expect(
+    (
+      await guest.request.patch(`/api/rooms/${code}`, {
+        data: { type: "lock" },
+      })
+    ).status(),
+  ).toBe(403);
+  await host.close();
+  await guest.close();
+});
+
+test("room-code slots fill their container without clipping on narrow screens", async ({
+  page,
+}) => {
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: "Join a room", exact: true })
+      .click();
+    const widget = page.locator('[data-slot="otp-input"]');
+    const field = page.locator(".form-field").filter({ has: widget });
+    const inputBox = await widget.boundingBox(),
+      fieldBox = await field.boundingBox();
+    expect(Math.abs(inputBox!.width - fieldBox!.width)).toBeLessThan(2);
+    const slots = page.locator('[data-slot="otp-input-slot"]');
+    const last = await slots.last().boundingBox();
+    expect(last!.x + last!.width).toBeLessThanOrEqual(
+      inputBox!.x + inputBox!.width + 1,
+    );
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+});
+
+test("invite code characters are centered within full-width slots", async ({
+  page,
+}) => {
+  const code = await createRoom(page);
+  await page
+    .getByRole("button", { name: "Invite friends", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  const widget = page.locator('[data-slot="otp-input"]');
+  const slots = widget.locator('[data-slot="otp-input-cell"]');
+  for (let index = 0; index < 6; index++) {
+    await expect(slots.nth(index).locator("input")).toHaveValue(code[index]!);
+    const cell = await slots.nth(index).boundingBox();
+    const glyph = await slots
+      .nth(index)
+      .locator('[data-slot="otp-input-char"]')
+      .boundingBox();
+    expect(
+      Math.abs(cell!.y + cell!.height / 2 - (glyph!.y + glyph!.height / 2)),
+    ).toBeLessThan(3);
+  }
+  await page.screenshot({ path: "test-results/aux-invite-responsive.png" });
+});
+
+test("home is a single screen at standard desktop and phone sizes", async ({
+  page,
+}) => {
+  for (const size of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.goto("/");
+    await expect(
+      page.getByRole("button", { name: "How Aux works", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Your sessions", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Your people." }),
+    ).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollHeight <= innerHeight + 1,
+      ),
+    ).toBe(true);
+    await page.screenshot({ path: `test-results/aux-home-${size.width}.png` });
+  }
 });

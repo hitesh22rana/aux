@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import { roomCodeSchema } from "./form-schemas";
 import { providers } from "@/features/listening-room/model/providers";
 
 export const trackSchema = v.object({
@@ -98,3 +99,18 @@ export type PlaybackStatus = v.InferOutput<typeof playbackStatusSchema>;
 export type Room = v.InferOutput<typeof roomSchema>;
 export type RoomView = v.InferOutput<typeof roomViewSchema>;
 export type RoomAction = v.InferOutput<typeof roomActionSchema>;
+
+export const sessionsSchema = v.object({
+  sessions: v.array(
+    v.object({
+      code: roomCodeSchema,
+      name: v.string(),
+      provider: v.picklist(providers),
+      host: v.boolean(),
+      expiresAt: v.number(),
+    }),
+  ),
+});
+export type SavedSession = v.InferOutput<
+  typeof sessionsSchema
+>["sessions"][number];

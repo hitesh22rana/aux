@@ -10,6 +10,7 @@ interface RoomLandingProps {
   onCreate: () => void;
   onJoin: () => void;
   onAbout: () => void;
+  onSessions: () => void;
 }
 
 export function RoomLanding({
@@ -18,6 +19,7 @@ export function RoomLanding({
   onCreate,
   onJoin,
   onAbout,
+  onSessions,
 }: RoomLandingProps) {
   return (
     <div className={styles.page}>
@@ -26,9 +28,14 @@ export function RoomLanding({
           <AudioLines size={28} strokeWidth={1.6} />
           <span>aux.</span>
         </Link>
-        <button className={styles.join} onClick={onJoin}>
-          Join a room <ArrowUpRight size={17} />
-        </button>
+        <nav className={styles.navigation} aria-label="Home navigation">
+          <button className={styles.join} onClick={onAbout}>
+            How Aux works
+          </button>
+          <button className={styles.join} onClick={onJoin}>
+            Join a room <ArrowUpRight size={17} />
+          </button>
+        </nav>
       </header>
       <main id="main" className={styles.stage}>
         <div className={styles.reading}>
@@ -46,34 +53,25 @@ export function RoomLanding({
               </p>
             )}
             <div className={styles.actions}>
-              <button
-                className={styles.primary}
-                onClick={onCreate}
-                disabled={!ready}
-              >
-                Create a room <ArrowRight size={20} />
-              </button>
+              <div className={styles.actionButtons}>
+                <button
+                  className={styles.primary}
+                  onClick={onCreate}
+                  disabled={!ready}
+                >
+                  Create a room <ArrowRight size={20} />
+                </button>
+                <button
+                  className={styles.secondary}
+                  onClick={onSessions}
+                  disabled={!ready}
+                >
+                  Your sessions
+                </button>
+              </div>
               <span>No account. Just a good pick.</span>
             </div>
           </section>
-          <section className={styles.how} aria-labelledby="how-title">
-            <h2 id="how-title">
-              Your people.
-              <br />
-              Their best picks.
-            </h2>
-            <p>
-              Send the invite. Let everyone add to the queue. Play through your
-              chosen music app, with the host in control.
-            </p>
-            <button className={styles.textAction} onClick={onAbout}>
-              How Aux works <ArrowUpRight size={17} />
-            </button>
-          </section>
-          <footer className={styles.footer}>
-            <span>Made for listening together.</span>
-            <span>Across multiple music services.</span>
-          </footer>
         </div>
         <figure className={styles.artwork}>
           <Image
@@ -86,6 +84,10 @@ export function RoomLanding({
           />
         </figure>
       </main>
+      <footer className={styles.footer}>
+        <span>Made for listening together.</span>
+        <span>Across multiple music services.</span>
+      </footer>
     </div>
   );
 }

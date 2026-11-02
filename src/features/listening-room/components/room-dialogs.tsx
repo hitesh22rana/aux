@@ -4,9 +4,10 @@ import { CreateRoomDialog } from "./dialogs/create-room-dialog";
 import { JoinRoomDialog } from "./dialogs/join-room-dialog";
 import { InviteRoomDialog } from "./dialogs/invite-room-dialog";
 import { SettingsRoomDialog } from "./dialogs/settings-room-dialog";
+import { SessionsRoomDialog } from "./dialogs/sessions-room-dialog";
 import { AboutRoomDialog } from "./dialogs/about-room-dialog";
 export type RoomDialog =
-  "create" | "join" | "invite" | "settings" | "about" | null;
+  "create" | "join" | "invite" | "settings" | "about" | "sessions" | null;
 interface RoomDialogsProps {
   dialog: RoomDialog;
   onDialogChange: (dialog: RoomDialog) => void;
@@ -21,10 +22,13 @@ interface RoomDialogsProps {
   onRoomReady: (room: RoomView) => void;
   onAction: (action: RoomAction) => Promise<void>;
   onLeave: () => Promise<boolean>;
+  onResume: (code: string) => void;
 }
 export function RoomDialogs(props: RoomDialogsProps) {
   const onClose = () => props.onDialogChange(null);
   switch (props.dialog) {
+    case "sessions":
+      return <SessionsRoomDialog onClose={onClose} onResume={props.onResume} />;
     case "create":
       return (
         <CreateRoomDialog

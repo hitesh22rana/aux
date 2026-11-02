@@ -813,7 +813,8 @@
     :global(.room-code-input)
     input[data-slot="otp-input-slot"],
   :global(.room-code-input) input[data-slot="otp-input-slot"] {
-    width: 40px;
+    width: 100%;
+    min-width: 0;
     height: 48px;
     min-height: 48px;
     padding: 0;
@@ -919,10 +920,11 @@
     text-align: center;
     margin-bottom: 20px;
   }
-  :global(.invite-code-display) span {
+  :global(.invite-code-display) > span {
     display: block;
     font-size: 12px;
     color: var(--muted);
+    margin-bottom: 10px;
   }
   :global(.invite-code-display) strong {
     font-size: 28px;
@@ -945,6 +947,49 @@
     width: 0;
     font-size: 12px;
     padding: 5px;
+  }
+  :global(.saved-sessions) {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  :global(.saved-sessions) button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    text-align: left;
+    padding: 16px;
+    background: var(--raised);
+    border-radius: 12px;
+  }
+  :global(.saved-sessions) button:hover {
+    background: var(--control);
+  }
+  :global(.saved-sessions) button > span {
+    min-width: 0;
+  }
+  :global(.saved-sessions) strong {
+    display: block;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+  :global(.saved-sessions) small {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  :global(.sessions-status) {
+    font-size: 14px;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
   :global(.settings-row) {
     display: flex;

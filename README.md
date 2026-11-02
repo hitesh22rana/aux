@@ -9,7 +9,8 @@ Aux manages requests, votes, and queue order. The host’s selected music app ha
 ## What you can do
 
 - Create a shared room and invite people without requiring them to install an app.
-- Request songs, vote for favorites, and give everyone a turn.
+- Request songs without a per-person queue cap and vote for favorites.
+- Resume available rooms from Your sessions on the home page.
 - Manage pending requests and queue order with host controls.
 - Choose from multiple music services, with automatic playback control where supported and explicit host-led app handoff otherwise.
 - Keep accepted requests in a durable queue that survives application restarts.

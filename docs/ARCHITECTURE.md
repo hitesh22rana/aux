@@ -120,3 +120,9 @@ The people view shows active tab counts and saved memberships that are away. Exp
 `DELETE /api/rooms/:code` leaves a room and revokes that browser's room session across its tabs. For a guest it preserves the room and accepted requests. For a host it first ends the durable queue, stops future dispatch, and disconnects the integration, then revokes membership. A durable-queue failure leaves the host's membership intact. Explicit leave differs from a tab closing, a refresh, or a temporary outage; those do not automatically end a hosted room.
 
 Desktop columns share the document scroll. A ResizeObserver records the request column's height. Its sticky offset allows normal scrolling until the form reaches the viewport bottom, then holds the column while the taller player rail finishes. Phones use normal stacked scrolling. There is no nested scroll region or scroll-event animation.
+
+## Browser session discovery
+
+`GET /api/rooms` returns only unexpired, non-ended rooms authorized by the request’s `aux_CODE` cookies. Names and codes alone do not authorize membership. Invalid, departed, and expired sessions are omitted; the response is private and not cached. The home session dialog loads on demand and validates the response with Valibot. Resume shares the versioned room-entry function with direct invitations, so superseded entry requests cannot reactivate an old room after navigation.
+
+The common queue mutation path does not impose a per-person pending-song cap, for either automatic or handoff services. The 1,000-request session budget still bounds deduplication storage. Member settings omit host actions entirely; authorization remains enforced by services independently of rendering.

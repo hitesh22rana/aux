@@ -3,15 +3,18 @@
   --landing-ground: #0b0b0a;
   --landing-accent: #e9bb62;
   --landing-muted: #bab9b2;
+  min-height: 100svh;
   background: var(--landing-ground);
   color: var(--landing-ink);
-  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 .header {
-  height: 92px;
+  min-height: 80px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   padding-inline: clamp(24px, 4vw, 64px);
 }
 .brand {
@@ -25,30 +28,35 @@
 .brand svg {
   color: var(--landing-accent);
 }
-.join,
-.textAction {
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.join {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 16px;
   padding-block: 12px;
+  white-space: nowrap;
 }
-.join:hover,
-.textAction:hover {
+.join:hover {
   color: var(--landing-accent);
 }
 .stage {
+  flex: 1;
   display: grid;
   grid-template-columns: 48% 52%;
-  align-items: start;
   padding-inline: clamp(24px, 4vw, 64px);
+  min-height: 0;
 }
 .reading {
+  display: flex;
   padding-right: clamp(24px, 4vw, 64px);
 }
 .hero {
-  min-height: calc(100svh - 92px);
-  padding-block: clamp(38px, 6vh, 88px) 72px;
+  padding-block: 32px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -68,32 +76,50 @@
   font-size: 18px;
   line-height: 1.6;
   max-width: 32ch;
-  margin-top: 36px;
+  margin-top: 32px;
 }
 .actions {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 17px;
-  margin-top: 36px;
+  gap: 16px;
+  margin-top: 32px;
+  width: 100%;
 }
-.primary {
+.actionButtons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.primary,
+.secondary {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 40px;
-  min-height: 58px;
-  padding: 16px 23px;
+  justify-content: center;
+  gap: 20px;
+  min-height: 54px;
+  padding: 15px 22px;
   border-radius: 100px;
-  background: var(--landing-accent);
-  color: var(--landing-ground);
   font-size: 16px;
   font-weight: 550;
+}
+.primary {
+  background: var(--landing-accent);
+  color: var(--landing-ground);
+}
+.secondary {
+  color: var(--landing-ink);
+  background: #252523;
 }
 .primary:hover {
   background: var(--landing-ink);
 }
-.primary:disabled {
+.secondary:hover {
+  background: #353533;
+}
+.primary:disabled,
+.secondary:disabled {
   opacity: 0.6;
   cursor: wait;
 }
@@ -102,10 +128,9 @@
   color: var(--landing-muted);
 }
 .artwork {
-  position: sticky;
-  top: 24px;
+  position: relative;
   margin: 0;
-  height: calc(100svh - 116px);
+  min-height: 400px;
   background: #ce8b22;
   overflow: hidden;
 }
@@ -113,32 +138,19 @@
   object-fit: cover;
   object-position: center;
 }
-.how {
-  padding-block: 110px 100px;
-}
-.how h2 {
-  font-size: clamp(30px, 3vw, 44px);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
-  margin: 0;
-}
-.how > p {
-  max-width: 35ch;
-  margin-block: 28px 14px;
-  font-size: 18px;
-  line-height: 1.6;
-}
 .footer {
-  padding-block: 40px;
+  min-height: 64px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 13px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  padding: 18px clamp(24px, 4vw, 64px);
   color: var(--landing-muted);
+  font-size: 13px;
 }
 .notice {
-  margin-top: 22px;
+  margin-top: 20px;
   font-size: 16px;
   line-height: 1.5;
   color: var(--landing-accent);
@@ -146,98 +158,144 @@
 }
 @media (max-width: 760px) {
   .header {
-    height: 76px;
+    min-height: 72px;
+  }
+  .brand {
+    font-size: 28px;
+    gap: 6px;
+  }
+  .brand svg {
+    width: 24px;
+  }
+  .navigation {
+    gap: 16px;
+  }
+  .join {
+    font-size: 14px;
   }
   .stage {
     display: flex;
     flex-direction: column;
+    gap: 24px;
   }
   .reading {
-    display: contents;
+    order: 1;
+    flex: 1;
+    padding: 0;
   }
   .hero {
-    order: 1;
-    min-height: auto;
-    padding: 32px 0 40px;
     width: 100%;
+    padding-block: 0;
   }
   .hero h1 {
-    font-size: clamp(64px, 16vw, 100px);
+    font-size: clamp(52px, 13.5vw, 76px);
   }
   .description {
-    margin-top: 28px;
-    font-size: 18px;
-    max-width: 30ch;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-top: 20px;
+    max-width: 32ch;
   }
   .actions {
-    margin-top: 28px;
+    margin-top: 24px;
+    gap: 12px;
+  }
+  .actionButtons {
+    width: 100%;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+  .primary,
+  .secondary {
+    font-size: 14px;
+    min-height: 48px;
+    padding: 12px 16px;
+    gap: 10px;
+    flex: 1;
+    white-space: nowrap;
+  }
+  .primary svg {
+    width: 16px;
   }
   .artwork {
     order: 0;
-    position: relative;
-    top: auto;
-    width: 100%;
-    height: clamp(220px, 32svh, 300px);
-    margin: 0;
+    min-height: 0;
+    height: clamp(140px, 24svh, 260px);
+    flex: none;
   }
   .image {
     object-position: center 42%;
   }
-  .how {
-    order: 2;
-    padding: 56px 0 40px;
-    width: 100%;
+  .footer {
+    min-height: 64px;
+    padding-block: 18px;
+    font-size: 12px;
   }
-  .how h2 {
-    font-size: 36px;
+}
+@media (max-width: 360px) {
+  .header,
+  .stage,
+  .footer {
+    padding-inline: 18px;
+  }
+  .navigation {
+    gap: 10px;
+  }
+  .join {
+    font-size: 12px;
+    gap: 4px;
+  }
+  .join svg {
+    width: 14px;
+  }
+  .hero h1 {
+    font-size: 48px;
+  }
+  .stage {
+    gap: 18px;
+  }
+  .description {
+    margin-top: 16px;
+  }
+  .actions {
+    margin-top: 18px;
+    gap: 10px;
   }
   .footer {
-    order: 3;
-    padding: 40px 0;
+    padding-block: 12px;
+    min-height: 58px;
+    gap: 4px;
+  }
+  .primary,
+  .secondary {
+    padding-inline: 10px;
+    gap: 6px;
+    font-size: 13px;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .brand,
-  .join {
-    animation: enter-fade 400ms ease-out both;
-  }
   .hero h1 > span {
     animation: enter-type 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
   .hero h1 > span:last-child {
     animation-delay: 70ms;
   }
-  .description {
-    animation: enter-fade 650ms 120ms ease-out both;
-  }
+  .description,
   .actions {
-    animation: enter-fade 650ms 200ms ease-out both;
+    animation: enter-fade 650ms ease-out both;
   }
   .image {
     animation: settle-art 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
   .primary svg,
-  .join svg,
-  .textAction svg {
+  .join svg {
     transition: transform 180ms ease;
   }
   .primary:hover svg {
     transform: translateX(4px);
   }
-  .join:hover svg,
-  .textAction:hover svg {
+  .join:hover svg {
     transform: translate(2px, -2px);
-  }
-  .primary:active {
-    transform: translateY(1px);
-  }
-  @supports (animation-timeline: view()) {
-    .how > *,
-    .footer > * {
-      animation: enter-fade linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 70%;
-    }
   }
   @keyframes enter-fade {
     from {

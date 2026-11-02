@@ -83,14 +83,16 @@ export function NowPlaying({
             elapsed={elapsed}
             progress={progress}
           />
-          <PlaybackControls
-            room={room}
-            current={current}
-            live={live}
-            isHost={isHost}
-            busy={busy}
-            onAction={onAction}
-          />
+          {isHost && (
+            <PlaybackControls
+              room={room}
+              current={current}
+              live={live}
+              isHost={isHost}
+              busy={busy}
+              onAction={onAction}
+            />
+          )}
         </>
       )}
       {manual && (

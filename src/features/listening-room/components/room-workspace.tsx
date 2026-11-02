@@ -83,7 +83,7 @@ export function RoomWorkspace({
           </>
         )}
         {tab === "people" ? (
-          <RoomMembers room={room} real openDialog={openDialog} />
+          <RoomMembers room={room} real />
         ) : manual ? (
           <LinkedTrackRequest
             key={room.code}
@@ -127,7 +127,7 @@ export function RoomWorkspace({
           <p>
             {isHost ? "You set the tone." : "Everyone gets a turn."}
             <br />
-            <span>Three requests each. Room for everyone.</span>
+            <span>Everyone brings something to the queue.</span>
           </p>
         </div>
       </aside>

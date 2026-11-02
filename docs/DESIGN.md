@@ -1,6 +1,6 @@
 # Aux interface
 
-The listening room answers one question first: what are we listening to, and what comes next? Discovery answers what to request; the people view shows who is contributing. Settings keep host permissions and room limits close to the actions they affect.
+The listening room answers one question first: what are we listening to, and what comes next? Discovery answers what to request; the people view shows who is contributing. Settings expose host controls only to the host; members see session information and their leave action.
 
 The redesign follows [Taste Skill](https://github.com/Leonxlnx/taste-skill)'s app-screen workflow. The selected direction is True-black flat, seed 791076289. The no-sidebar shell gives the queue more width. Panels use a neutral lightness step without resting shadows. Inter is hosted locally under its included Open Font License.
 
@@ -24,7 +24,7 @@ Rooms display actual members and requests. The initial screen invites people to 
 
 The home page follows Taste Skill’s split-stage direction, seed 650188940. The aux cable, the object behind the product name, becomes the visual invitation to contribute. A single generated editorial still life shows headphones, an amber record, and an aux cable. It is conceptual artwork, not a photograph of a sold product or a customer session. The locally hosted WebP is approximately 182 KB.
 
-The desktop pairs a large two-line title with a sticky portrait image and a short reading column. On phones the image leads, followed by the title and create action. The brand keeps Inter, a near-black ground, and an amber accent. Join, create, and the explanation dialog use the existing working flows; the landing page has no room navigation or settings.
+The desktop pairs a large two-line title with portrait artwork in a single-screen layout. On phones the image leads, followed by the title and create/resume actions. The brand keeps Inter, a near-black ground, and an amber accent. How Aux works sits beside Join a room in the header. Your sessions sits beside Create a room and opens the browser’s authorized memberships. The previous explanatory section has been removed; the two-line footer remains at the page bottom. Ordinary desktop and phone viewports fit without scrolling; small-height screens and zoom can expand naturally to preserve readable controls. The landing page has no room navigation or settings.
 
 The initial audit measured a 26px desktop title, no images, and a 30% empty block. The revised page uses a 118px title at 1440px, a 64px phone title, and one dominant image. Desktop, tablet, and phone crops are reviewed in the browser. Motion uses a brief image settle, type entrances, control feedback, and section reveals; reduced-motion preferences keep everything static and readable.
 
@@ -37,3 +37,9 @@ Room invitations use a dedicated loading state before showing a room or returnin
 Room codes use the Rare UI `swamimalode07/rare-ui/otp-input` component, installed with the shadcn CLI. The shared primitive retains its slot transitions, keyboard handling, and paste support, with project-specific TypeScript guards, first-input refs for React Hook Form, error descriptions, read-only invite display, dark colors, and reduced-motion support. Motion features load lazily; the glyph renderer is separate from input behavior.
 
 People show Active now with a tab count, or Away for a saved membership without a recent heartbeat. Explicitly departed members remain in request attribution but leave the people view. The host action is labelled End session and leave so its effect on everyone is clear.
+
+## Responsive codes and reduced chrome
+
+Code entry and invitation display use six equal grid columns across their container. Slots have no fixed width or minimum width that can overflow a narrow dialog. Invite labels target only direct children, so typography rules cannot override the widget’s centered character layer. Caret alignment follows cell resizing. Host-only controls are absent from member settings; the redundant people-view invite action and Shared session label have been removed. Connector setup instructions remain in technical documentation instead of the room UI.
+
+Settings and room notes do not advertise or impose a per-person song cap. The remaining queue-order explanation describes behavior without suggesting a personal request cap.

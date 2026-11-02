@@ -850,3 +850,49 @@ it("revokes a departed member even when ephemeral presence cleanup fails", async
     connections: 0,
   });
 });
+
+it("allows a member to keep more than three pending requests", async () => {
+  const h = room();
+  const guest = store.joinRoom(h.room.code, "Guest");
+  for (const digit of ["1", "2", "3", "4", "5"])
+    await orchestration.requestTrack(
+      h.room.code,
+      guest.token,
+      `spotify:track:${digit.repeat(22)}`,
+      randomUUID(),
+    );
+  const state = await queue.queueState(h.room);
+  expect(
+    state.queue.filter((item) => item.memberId === guest.room.me),
+  ).toHaveLength(5);
+});
+it("lists only current memberships authorized by the supplied browser cookies", async () => {
+  const h = room();
+  const guest = store.joinRoom(h.room.code, "Guest");
+  const cookie = (token: string) => [
+    { name: `aux_${h.room.code}`, value: token },
+  ];
+  expect(store.browserSessions([])).toEqual([]);
+  expect(store.browserSessions(cookie("invalid"))).toEqual([]);
+  expect(store.browserSessions(cookie(h.token))).toEqual([
+    expect.objectContaining({ code: h.room.code, host: true }),
+  ]);
+  expect(store.browserSessions(cookie(guest.token))).toEqual([
+    expect.objectContaining({ code: h.room.code, host: false }),
+  ]);
+  await orchestration.leaveSession(h.room.code, guest.token);
+  expect(store.browserSessions(cookie(guest.token))).toEqual([]);
+  await orchestration.leaveSession(h.room.code, h.token);
+  expect(store.browserSessions(cookie(h.token))).toEqual([]);
+  const expired = room();
+  const { db } = await import("@/server/database/sqlite");
+  db.prepare("UPDATE rooms SET expires=? WHERE code=?").run(
+    Date.now() - 1,
+    expired.room.code,
+  );
+  expect(
+    store.browserSessions([
+      { name: `aux_${expired.room.code}`, value: expired.token },
+    ]),
+  ).toEqual([]);
+});

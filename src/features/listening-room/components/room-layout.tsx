@@ -83,9 +83,6 @@ export function RoomHeader({
           ))}
         </nav>
         <div className="header-actions">
-          <span className="session-kind">
-            {real ? "Shared session" : "Listen together"}
-          </span>
           {real && !room.ended && (
             <button
               className="text-button room-settings-action"

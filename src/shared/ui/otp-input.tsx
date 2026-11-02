@@ -3,6 +3,8 @@
 // Adapted from Rare UI: swamimalode07/rare-ui/otp-input registry item
 import {
   useRef,
+  useEffect,
+  type RefObject,
   useState,
   type ComponentProps,
   type Ref,
@@ -34,7 +36,7 @@ const SUCCESS = "#34C759";
 
 const SIZES = {
   sm: {
-    box: "size-10 rounded-lg",
+    box: "h-10 w-full min-w-0 rounded-lg",
     text: "text-base",
     caret: "h-5",
     gap: "gap-1.5",
@@ -42,7 +44,7 @@ const SIZES = {
     radius: 8,
   },
   md: {
-    box: "size-12 rounded-xl",
+    box: "h-12 w-full min-w-0 rounded-xl",
     text: "text-lg",
     caret: "h-6",
     gap: "gap-2",
@@ -50,7 +52,7 @@ const SIZES = {
     radius: 12,
   },
   lg: {
-    box: "size-14 rounded-2xl",
+    box: "h-14 w-full min-w-0 rounded-2xl",
     text: "text-xl",
     caret: "h-7",
     gap: "gap-2.5",
@@ -137,6 +139,7 @@ export function OtpInput({
   // the slot the user deliberately moved to, so a full code only changes on purpose
   const editingAtRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
+  useCaretAlignment(focused, cellsRef, setCaretX);
 
   // padded, not joined: joining would close a gap left by a mid-code backspace
   const slots =
@@ -270,7 +273,7 @@ export function OtpInput({
       <div
         data-slot="otp-input"
         data-status={status}
-        className={cn("relative inline-flex", className)}
+        className={cn("relative block w-full min-w-0", className)}
         {...props}
       >
         <m.div
@@ -292,8 +295,9 @@ export function OtpInput({
             x: status === "error" && !reduceMotion ? SHAKE : 0,
           }}
           transition={{ duration: 0.32, ease: "easeOut" }}
+          style={{ gridTemplateColumns: `repeat(${length}, minmax(0, 1fr))` }}
           data-slot="otp-input-row"
-          className={cn("relative flex items-center", scale.gap)}
+          className={cn("relative grid w-full min-w-0 items-center", scale.gap)}
         >
           {slotItems.map(({ slot, position: index }) => (
             <div
@@ -303,7 +307,7 @@ export function OtpInput({
               }}
               data-slot="otp-input-cell"
               data-filled={Boolean(slot)}
-              className="relative"
+              className="relative min-w-0"
             >
               <input
                 ref={(el) => {
@@ -471,4 +475,20 @@ function OtpGlyph({
       </span>
     </>
   );
+}
+
+function useCaretAlignment(
+  focused: number | null,
+  cellsRef: RefObject<(HTMLDivElement | null)[]>,
+  setPosition: (position: number) => void,
+) {
+  useEffect(() => {
+    const cell = focused === null ? undefined : cellsRef.current[focused];
+    if (!cell) return;
+    const observer = new ResizeObserver(() =>
+      setPosition(cell.offsetLeft + cell.offsetWidth / 2),
+    );
+    observer.observe(cell);
+    return () => observer.disconnect();
+  }, [focused, cellsRef, setPosition]);
 }

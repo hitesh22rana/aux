@@ -55,11 +55,52 @@ export function useRoomSession(
     setReady(true);
     setResolving(false);
     setEntryError("");
-    history.replaceState(null, "", `/?room=${data.code}`);
+    if (location.search !== `?room=${data.code}`)
+      history.replaceState(null, "", `/?room=${data.code}`);
   }, []);
+  const entryVersionRef = useRef(0);
+  const cancelEntry = useCallback(() => {
+    entryVersionRef.current++;
+  }, []);
+  const openRoom = useCallback(
+    async (code: string) => {
+      const version = ++entryVersionRef.current;
+      if (new URLSearchParams(location.search).get("room") !== code)
+        history.replaceState(null, "", `/?room=${encodeURIComponent(code)}`);
+      mutationVersionRef.current++;
+      setReal(false);
+      setResolving(true);
+      setReady(false);
+      setEntryError("");
+      try {
+        const data = await roomRequest(
+          `/api/rooms/${encodeURIComponent(code)}`,
+        );
+        if (version !== entryVersionRef.current) return;
+        if (data.ended) throw new HttpError("This room has ended.", 410);
+        setActiveRoom(data);
+      } catch (error: unknown) {
+        if (version !== entryVersionRef.current) return;
+        if (error instanceof HttpError && error.status === 401)
+          onJoinRequired(code);
+        else {
+          setEntryError(
+            error instanceof HttpError && [400, 404, 410].includes(error.status)
+              ? "This room is no longer available. Ask for a new invite or start a room."
+              : "We couldn’t open this room. Try this link again in a moment.",
+          );
+          history.replaceState(null, "", "/");
+        }
+      } finally {
+        if (version === entryVersionRef.current) {
+          setReady(true);
+          setResolving(false);
+        }
+      }
+    },
+    [onJoinRequired, setActiveRoom],
+  );
   useEffect(() => {
-    let stopped = false;
-    // Only an explicit invitation URL restores a room; the home page always stays home.
     const bootstrap = window.setTimeout(() => {
       setNow(Date.now());
       const params = new URLSearchParams(location.search);
@@ -73,7 +114,9 @@ export function useRoomSession(
             "Spotify connection failed. Try connecting again.",
         );
       const code = params.get("room");
-      if (!code || !v.safeParse(roomCodeSchema, code).success) {
+      if (code && v.safeParse(roomCodeSchema, code).success)
+        void openRoom(code);
+      else {
         if (code) {
           history.replaceState(null, "", "/");
           setEntryError(
@@ -82,45 +125,13 @@ export function useRoomSession(
         }
         setReady(true);
         setResolving(false);
-        return;
       }
-      roomRequest(`/api/rooms/${encodeURIComponent(code)}`)
-        .then((data) => {
-          if (stopped) return;
-          if (data.ended) {
-            setEntryError(
-              "This room has ended. Ask for a new invite or start a room.",
-            );
-            history.replaceState(null, "", "/");
-            setReady(true);
-            return;
-          }
-          setActiveRoom(data);
-        })
-        .catch((error: unknown) => {
-          if (stopped) return;
-          if (error instanceof HttpError && error.status === 401) {
-            onJoinRequired(code);
-          } else {
-            setEntryError(
-              error instanceof HttpError &&
-                [400, 404, 410].includes(error.status)
-                ? "This room is no longer available. Ask for a new invite or start a room."
-                : "We couldn’t open this room. Try this link again in a moment.",
-            );
-            history.replaceState(null, "", "/");
-          }
-          setReady(true);
-        })
-        .finally(() => {
-          if (!stopped) setResolving(false);
-        });
     }, 0);
     return () => {
-      stopped = true;
       window.clearTimeout(bootstrap);
+      cancelEntry();
     };
-  }, [setActiveRoom, onJoinRequired]);
+  }, [openRoom, cancelEntry]);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
@@ -202,14 +213,29 @@ export function useRoomSession(
       setBusy(false);
     }
   }
-  function resetSession() {
-    mutationVersionRef.current++;
-    history.replaceState(null, "", "/");
-    setReal(false);
-    setRoom(emptyRoom());
-    setOffline(false);
-    setEntryError("");
-  }
+  const resetSession = useCallback(
+    (updateUrl = true) => {
+      cancelEntry();
+      setResolving(false);
+      mutationVersionRef.current++;
+      if (updateUrl) history.replaceState(null, "", "/");
+      setReal(false);
+      setRoom(emptyRoom());
+      setOffline(false);
+      setEntryError("");
+    },
+    [cancelEntry],
+  );
+  useEffect(() => {
+    const navigate = () => {
+      const code = new URLSearchParams(location.search).get("room");
+      if (code && v.safeParse(roomCodeSchema, code).success)
+        void openRoom(code);
+      else resetSession(false);
+    };
+    window.addEventListener("popstate", navigate);
+    return () => window.removeEventListener("popstate", navigate);
+  }, [openRoom, resetSession]);
   return {
     room,
     real,
@@ -230,5 +256,6 @@ export function useRoomSession(
     resetSession,
     leaveSession,
     resolving,
+    openRoom,
   };
 }
