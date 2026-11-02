@@ -143,7 +143,7 @@ Names seed a shared `MemberAvatar` wrapper around `@blobatar/react` 2.7.0.
 NFKC normalization, trimming and lowercase keep each name's local SVG avatar
 stable across rooms, queue attribution and refreshes. No remote avatar service
 receives member names. People counts include all retained memberships, including
-Away members; explicitly departed or removed members are excluded. Presence dots
+Away members; explicitly departed or removed members are excluded. Presence dots on avatar frames
 communicate Active now or Away without exposing tab counts in the UI. The people
 grid fits up to three compact horizontal cards in the main column and collapses
 on smaller screens. Names truncate visually while preserving their full text.
@@ -185,4 +185,9 @@ reopening while interacting with the landing page. Authentication-required valid
 invitations still open the existing Join form. Avatar groups follow the overlapping
 AvatarGroup/AvatarGroupCount pattern from the shadcn Base Avatar documentation,
 using local Blobatar images rather than adding another image-loading primitive.
-Presence dots remain accessible beside names; group totals include Away members.
+Presence dots remain accessible on avatar frames; group totals include Away members.
+
+People cards reserve three equal grid columns on desktop, two on medium screens,
+and one on phones. Unoccupied columns stay empty, so one or two members never
+stretch across the whole desktop row. Each Blobatar sits in a circular raised-color
+frame with its presence badge attached to the lower right; names retain ellipsis.

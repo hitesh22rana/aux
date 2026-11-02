@@ -50,6 +50,11 @@ Unavailable invitations return to the homepage and open a dismissible Room unava
 dialog with Create a room and Join a room actions. The error does not take over the
 landing hero. The room summary uses a shadcn-style overlapping Blobatar group with
 up to three faces and a +N overflow badge instead of a membership sentence. The
-Room is live label is omitted. Pastel presence dots sit beside names, with a filled
+Room is live label is omitted. Pastel presence dots sit on circular avatar frames, with a filled
 green online indicator and a hollow warm away indicator. The invite card places its
 code and remaining time together in one compact metadata row.
+
+People cards reserve three equal grid columns on desktop, two on medium screens,
+and one on phones. Unoccupied columns stay empty, so one or two members never
+stretch across the whole desktop row. Each Blobatar sits in a circular raised-color
+frame with its presence badge attached to the lower right; names retain ellipsis.

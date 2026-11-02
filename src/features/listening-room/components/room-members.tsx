@@ -39,7 +39,12 @@ export function RoomMembers({
         {members.map((member) => (
           <article key={member.id} className="member-card">
             <div className="member-avatar-wrap">
-              <MemberAvatar name={member.name} size={56} />
+              <MemberAvatar name={member.name} size={48} />
+              <span
+                className={`member-status-dot ${member.active ? "active" : "away"}`}
+                role="img"
+                aria-label={member.active ? "Active now" : "Away"}
+              />
             </div>
             <div className="member-details">
               <div className="member-name-row">
@@ -47,11 +52,6 @@ export function RoomMembers({
                   {member.name}
                   {member.id === room.me ? " (you)" : ""}
                 </h3>
-                <span
-                  className={`member-status-dot ${member.active ? "active" : "away"}`}
-                  role="img"
-                  aria-label={member.active ? "Active now" : "Away"}
-                />
               </div>
               <p>{member.host ? "Host" : "Member"}</p>
               <span>
