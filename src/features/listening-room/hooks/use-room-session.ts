@@ -163,7 +163,9 @@ export function useRoomSession(
             history.replaceState(null, "", "/");
             setReal(false);
             setRoom(emptyRoom());
-            setEntryError("You’ve left this room. Join again to take part.");
+            setEntryError(
+              "Your membership is no longer active. Ask the host for an invite.",
+            );
           } else setOffline(true);
         }
       } finally {
@@ -189,6 +191,7 @@ export function useRoomSession(
       if (live && ["toggle", "next"].includes(a.type))
         toast("Command sent to Spotify. Updating playback shortly.");
       if (a.type === "remove") toast("Request removed");
+      if (a.type === "kick") toast.success("Member removed from the room");
     } catch (e) {
       toast.error(errorMessage(e));
     } finally {

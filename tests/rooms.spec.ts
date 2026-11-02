@@ -117,9 +117,9 @@ test("mobile room has real empty states, one settings entry and working navigati
   await page.getByRole("button", { name: "Close dialog" }).click();
   await addSong(page, "Mobile song");
   await page.getByRole("button", { name: "Open navigation" }).click();
-  await page.getByRole("button", { name: "The people", exact: false }).click();
+  await page.getByRole("button", { name: "people", exact: false }).click();
   await expect(
-    page.getByRole("heading", { name: "The people", exact: true }),
+    page.getByRole("heading", { name: "people", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -781,12 +781,12 @@ test("closing the last tab marks a retained membership away", async ({
         ?.active;
     })
     .toBe(false);
-  await h.getByRole("button", { name: /The people/ }).click();
+  await h.getByRole("button", { name: /people/ }).click();
   await expect(
     h
       .locator(".member-card")
       .filter({ hasText: "Away guest" })
-      .getByText("Away", { exact: true }),
+      .getByRole("img", { name: "Away", exact: true }),
   ).toBeVisible();
   await host.close();
   await guest.close();

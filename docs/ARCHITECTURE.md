@@ -115,7 +115,7 @@ The root HTML element uses `suppressHydrationWarning` only for attributes inject
 
 Browser membership and tab presence are separate. An HTTP-only room cookie identifies a saved browser membership. Each mounted tab creates a distinct connection ID, heartbeats every 20 seconds, and sends a best-effort page-hide beacon. Redis expires presence after 90 seconds without a heartbeat. Closing one tab preserves presence from other tabs; suspended or disconnected memberships display as Away. A brief tombstone prevents an in-flight heartbeat from reviving a closed connection. Returning from the browser back/forward cache creates a fresh connection ID.
 
-The people view shows active tab counts and saved memberships that are away. Explicitly departed memberships are excluded from the people list and capacity checks, while their identity remains available to attribute accepted requests. Presence never grants permissions; all mutations still authorize the cookie-backed membership on the server.
+The people view shows presence dots and saved memberships that are away, while omitting tab counts. Explicitly departed memberships are excluded from the people list and capacity checks, while their identity remains available to attribute accepted requests. Presence never grants permissions; all mutations still authorize the cookie-backed membership on the server.
 
 `DELETE /api/rooms/:code` leaves a room and revokes that browser's room session across its tabs. For a guest it preserves the room and accepted requests. For a host it first ends the durable queue, stops future dispatch, and disconnects the integration, then revokes membership. A durable-queue failure leaves the host's membership intact. Explicit leave differs from a tab closing, a refresh, or a temporary outage; those do not automatically end a hosted room.
 
@@ -136,3 +136,44 @@ both page content and portalled dialogs. Tailwind's dark variant uses the same
 attribute. Theme-dependent controls wait for the client snapshot to avoid SSR
 hydration differences. Notifications follow the resolved theme. User toggles use the browser View Transition API for a 240ms color crossfade, with an immediate fallback and reduced-motion support. Keep new UI
 colors semantic so both light and dark themes remain supported.
+
+## People, avatars and moderation
+
+Names seed a shared `MemberAvatar` wrapper around `@blobatar/react` 2.7.0.
+NFKC normalization, trimming and lowercase keep each name's local SVG avatar
+stable across rooms, queue attribution and refreshes. No remote avatar service
+receives member names. People counts include all retained memberships, including
+Away members; explicitly departed or removed members are excluded. Presence dots
+communicate Active now or Away without exposing tab counts in the UI. The people
+grid fits up to three compact horizontal cards in the main column and collapses
+on smaller screens. Names truncate visually while preserving their full text.
+
+A host can confirm removal from a member's card. The server checks the requesting
+session, host role, room status and target membership; a host cannot remove themself
+or another host. SQLite atomically marks departure and revokes all target sessions.
+Presence is cleared best effort. Existing accepted requests and author attribution
+remain intact. Revoked browsers return home on their next room poll. Removal revokes
+a membership; this account-free application does not establish a permanent identity
+ban. A fresh join is possible while the room accepts new members.
+
+Sharing surfaces show the time remaining until the room's original 24-hour expiry,
+rounded up to minutes and refreshed every 15 seconds. The display is informational;
+server-side expiry remains authoritative. Notifications appear at the top.
+
+## Input and HTTP boundaries
+
+Mutation routes require JSON and bound the actual incoming stream to 16 KiB, even
+without a Content-Length header. Valibot rejects unexpected request keys, malformed
+IDs, empty identifiers, oversized names/links and control or direction-spoofing
+characters in supplied text. Room codes, UUIDs, member IDs and session-token formats
+are checked separately. Existing service-link allowlists canonicalize track URLs;
+Aux does not fetch arbitrary user-provided URLs. User strings remain text and are
+escaped by React; SQL values use parameter bindings rather than string interpolation.
+Do not introduce HTML rendering of these fields or destructive HTML stripping.
+
+Mutations enforce origin and browser cross-site metadata checks. Session cookies
+remain HTTP-only and SameSite=Lax, with Secure on HTTPS. Responses add nosniff,
+frame-denial and referrer-policy headers; API responses are private and not cached.
+These controls are defense in depth, not proof that every possible exploit is
+impossible. The deployment proxy must replace forwarded host headers, enforce HTTPS,
+and apply request timeouts and abuse/rate controls before exposing the app publicly.

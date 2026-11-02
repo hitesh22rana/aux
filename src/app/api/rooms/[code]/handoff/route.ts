@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/server/http/request-body";
 import { linkedTrackEntries } from "@/features/listening-room/contracts";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
@@ -11,20 +12,20 @@ import {
 } from "@/features/listening-room/server";
 export const runtime = "nodejs";
 const schema = v.variant("type", [
-  v.object({
+  v.strictObject({
     type: v.literal("request"),
     ...linkedTrackEntries,
     requestId: v.pipe(v.string(), v.uuid()),
   }),
-  v.object({
+  v.strictObject({
     type: v.literal("prepare"),
     itemId: v.optional(v.pipe(v.string(), v.maxLength(60))),
   }),
-  v.object({
+  v.strictObject({
     type: v.picklist(["confirm", "cancel"]),
     selectionId: v.pipe(v.string(), v.uuid()),
   }),
-  v.object({ type: v.literal("finish") }),
+  v.strictObject({ type: v.literal("finish") }),
 ]);
 export async function POST(
   request: NextRequest,
@@ -37,7 +38,7 @@ export async function POST(
       (await ctx.params).code.toUpperCase(),
     );
     const token = request.cookies.get(`aux_${code}`)?.value;
-    const action = v.parse(schema, await request.json());
+    const action = v.parse(schema, await readJsonBody(request));
     if (action.type === "request")
       return NextResponse.json(await requestLinkedTrack(code, token, action));
     if (action.type === "prepare")

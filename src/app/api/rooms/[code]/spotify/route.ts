@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/server/http/request-body";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 import { checkOrigin, errorResponse } from "@/server/http/responses";
@@ -65,11 +66,11 @@ export async function GET(request: NextRequest, ctx: Context) {
   }
 }
 const schema = v.variant("type", [
-  v.object({ type: v.literal("connect") }),
-  v.object({ type: v.literal("disconnect") }),
-  v.object({ type: v.literal("sync") }),
-  v.object({ type: v.literal("recover") }),
-  v.object({
+  v.strictObject({ type: v.literal("connect") }),
+  v.strictObject({ type: v.literal("disconnect") }),
+  v.strictObject({ type: v.literal("sync") }),
+  v.strictObject({ type: v.literal("recover") }),
+  v.strictObject({
     type: v.literal("request"),
     uri: v.pipe(v.string(), v.regex(/^spotify:track:[A-Za-z0-9]{22}$/)),
     requestId: v.pipe(v.string(), v.uuid()),
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest, ctx: Context) {
   try {
     checkOrigin(request);
     const { code, token } = await context(request, ctx);
-    const action = v.parse(schema, await request.json());
+    const action = v.parse(schema, await readJsonBody(request));
     if (action.type === "request")
       return NextResponse.json(
         await requestTrack(code, token, action.uri, action.requestId),

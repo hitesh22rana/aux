@@ -896,3 +896,46 @@ it("lists only current memberships authorized by the supplied browser cookies", 
     ]),
   ).toEqual([]);
 });
+
+it("only hosts remove guests, revoke all guest sessions and preserve accepted requests", async () => {
+  const host = room();
+  const guest = store.joinRoom(host.room.code, "Guest");
+  await orchestration.requestTrack(
+    host.room.code,
+    guest.token,
+    one,
+    randomUUID(),
+  );
+  await expect(
+    orchestration.liveCommand(host.room.code, guest.token, {
+      type: "kick",
+      memberId: host.room.me,
+    }),
+  ).rejects.toMatchObject({ status: 403 });
+  await expect(
+    orchestration.liveCommand(host.room.code, host.token, {
+      type: "kick",
+      memberId: host.room.me,
+    }),
+  ).rejects.toMatchObject({ status: 403 });
+  await expect(
+    orchestration.liveCommand(host.room.code, host.token, {
+      type: "kick",
+      memberId: "a".repeat(24),
+    }),
+  ).rejects.toMatchObject({ status: 404 });
+  const result = await orchestration.liveCommand(host.room.code, host.token, {
+    type: "kick",
+    memberId: guest.room.me,
+  });
+  expect(
+    result.members.find((member) => member.id === guest.room.me)?.leftAt,
+  ).toBeTruthy();
+  expect(result.queue.some((item) => item.memberId === guest.room.me)).toBe(
+    true,
+  );
+  expect(() => store.identify(host.room.code, guest.token)).toThrow();
+  await expect(
+    orchestration.requestTrack(host.room.code, guest.token, two, randomUUID()),
+  ).rejects.toMatchObject({ status: 401 });
+});

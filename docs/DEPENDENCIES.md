@@ -67,3 +67,5 @@ Use `pnpm install --frozen-lockfile` for reproducible installation. After an int
 - [pnpm build-script policy](https://pnpm.io/settings/build#allowbuilds)
 
 The Rare UI OTP source is vendored in `src/shared/ui/otp-input.tsx`; shadcn 4.23.0 was used as an installation CLI and is not an application dependency. The component's motion features are dynamically imported. Its `cn` helper follows the installed registry's current dependency rather than adding a second class-name utility stack.
+
+Avatar rendering uses `blobatar` and `@blobatar/react`, both pinned to 2.7.0.

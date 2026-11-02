@@ -20,6 +20,8 @@ export function errorResponse(error: unknown) {
   );
 }
 export function checkOrigin(request: NextRequest) {
+  if (request.headers.get("sec-fetch-site") === "cross-site")
+    throw new AppError("Cross-site requests are not allowed.", 403);
   const origin = request.headers.get("origin");
   const host =
     request.headers.get("x-forwarded-host") || request.headers.get("host");

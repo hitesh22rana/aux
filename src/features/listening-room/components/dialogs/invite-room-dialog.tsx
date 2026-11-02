@@ -1,5 +1,6 @@
 "use client";
 
+import { RoomTimeRemaining } from "../room-time-remaining";
 import { Copy, Link2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { OtpInput } from "@/shared/ui/otp-input";
@@ -75,7 +76,8 @@ export function InviteRoomDialog({
         Copy invite link
       </button>
       <p className="text-xs text-muted text-center mt-4">
-        Rooms stay available for 24 hours. Up to 12 people.
+        <RoomTimeRemaining createdAt={room.createdAt} ended={room.ended} /> · Up
+        to 12 people.
       </p>
     </RoomModal>
   );

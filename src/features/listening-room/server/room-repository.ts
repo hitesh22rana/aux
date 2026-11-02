@@ -33,7 +33,8 @@ export function save(room: Room) {
   );
 }
 export function identify(code: string, token: string | undefined): Member {
-  if (!token) throw new AppError("Join this room to continue.", 401);
+  if (!token || !/^[a-f0-9]{64}$/.test(token))
+    throw new AppError("Join this room to continue.", 401);
   const s = db
     .prepare("SELECT member FROM sessions WHERE token=? AND code=?")
     .get(hash(token), code) as { member: string } | undefined;
@@ -192,4 +193,35 @@ export function browserSessions(
     }
   }
   return sessions.sort((a, b) => b.expiresAt - a.expiresAt);
+}
+
+/** Revoke all browser sessions atomically, retaining request attribution. */
+export function removeMember(
+  code: string,
+  token: string | undefined,
+  memberId: string,
+) {
+  return db.transaction(() => {
+    const host = identify(code, token);
+    const room = readRoom(code);
+    if (!host.host)
+      throw new AppError("Only the host can remove members.", 403);
+    if (room.ended) throw new AppError("This session has ended.", 410);
+    const target = room.members.find(
+      (member) => member.id === memberId && !member.leftAt,
+    );
+    if (!target) throw new AppError("This member has already left.", 404);
+    if (target.host || target.id === host.id)
+      throw new AppError(
+        "The host cannot be removed. End the session instead.",
+        403,
+      );
+    target.leftAt = Date.now();
+    db.prepare("DELETE FROM sessions WHERE code=? AND member=?").run(
+      code,
+      target.id,
+    );
+    save(room);
+    return { room, me: host.id };
+  })();
 }

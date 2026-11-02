@@ -17,7 +17,7 @@ function ThemeToaster() {
   return (
     <Toaster
       theme={resolvedTheme === "dark" ? "dark" : "light"}
-      position="bottom-center"
+      position="top-center"
       richColors
       closeButton
       toastOptions={{ style: { fontFamily: "inherit", borderRadius: "12px" } }}

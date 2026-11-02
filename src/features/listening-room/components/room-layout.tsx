@@ -1,5 +1,7 @@
 "use client";
+import { RoomTimeRemaining } from "./room-time-remaining";
 import Link from "next/link";
+import { MemberAvatar } from "@/shared/ui/member-avatar";
 import { ThemeToggle } from "@/shared/theme/theme-toggle";
 import {
   ArrowDown,
@@ -56,9 +58,9 @@ export function RoomHeader({
         >
           {(
             [
-              ["queue", "The room", Radio],
+              ["queue", "room", Radio],
               ["discover", "Discover music", Disc3],
-              ["people", "The people", Users],
+              ["people", "people", Users],
             ] as const
           ).map(([value, label, Icon]) => (
             <button
@@ -73,18 +75,13 @@ export function RoomHeader({
               {label}
               {value === "people" && (
                 <span className="nav-count">
-                  {
-                    room.members.filter(
-                      (member) => member.active && !member.leftAt,
-                    ).length
-                  }
+                  {room.members.filter((member) => !member.leftAt).length}
                 </span>
               )}
             </button>
           ))}
         </nav>
         <div className="header-actions">
-          <ThemeToggle />
           {real && !room.ended && (
             <button
               className="text-button room-settings-action"
@@ -95,6 +92,7 @@ export function RoomHeader({
               <span>Room settings</span>
             </button>
           )}
+          <ThemeToggle />
           <button
             className="mobile-menu icon-button"
             aria-label={menu ? "Close navigation" : "Open navigation"}
@@ -129,7 +127,7 @@ export function RoomHeading({
             ? room.name
             : tab === "discover"
               ? "Discover music"
-              : "The people"}
+              : "people"}
         </h1>
         <p>
           {tab === "queue"
@@ -199,17 +197,13 @@ export function RoomSummary({ room, real }: { room: RoomView; real: boolean }) {
             .filter((member) => !member.leftAt)
             .slice(0, 4)
             .map((member) => (
-              <span key={member.id} style={{ background: member.color }}>
-                {member.name[0]}
+              <span key={member.id}>
+                <MemberAvatar name={member.name} size={24} />
               </span>
             ))}
         </div>
         <span>
-          {
-            room.members.filter((member) => member.active && !member.leftAt)
-              .length
-          }{" "}
-          active in the room
+          {room.members.filter((member) => !member.leftAt).length} in the room
         </span>
       </div>
       <div className="summary-detail">
@@ -253,6 +247,11 @@ export function RoomInviteCard({
           Room code <b>{room.code}</b>
           <Copy size={14} />
         </button>
+      )}
+      {real && (
+        <p className="room-time">
+          <RoomTimeRemaining createdAt={room.createdAt} ended={room.ended} />
+        </p>
       )}
     </section>
   );

@@ -83,7 +83,7 @@ export function RoomWorkspace({
           </>
         )}
         {tab === "people" ? (
-          <RoomMembers room={room} real />
+          <RoomMembers room={room} busy={busy} onAction={onAction} />
         ) : manual ? (
           <LinkedTrackRequest
             key={room.code}

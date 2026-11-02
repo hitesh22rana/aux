@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/server/http/request-body";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 import { redis } from "@/server/redis/connection";
@@ -29,7 +30,7 @@ export function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     checkOrigin(request);
-    const data = v.parse(createRoomSchema, await request.json());
+    const data = v.parse(createRoomSchema, await readJsonBody(request));
     await (await redis()).ping();
     const created = createRoom(data.name, data.person, data.provider);
     await changeQueue(created.room, () => {}, "created");

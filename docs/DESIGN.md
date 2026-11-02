@@ -4,7 +4,7 @@ The listening room answers one question first: what are we listening to, and wha
 
 The redesign follows [Taste Skill](https://github.com/Leonxlnx/taste-skill)'s app-screen workflow. The selected direction is True-black flat, seed 791076289. The no-sidebar shell gives the queue more width. Panels use a neutral lightness step without resting shadows. Inter is hosted locally under its included Open Font License.
 
-Aux's visual signature is the current song's cover beside the group-authored queue. Playback progress uses a muted amber accent. Navigation and primary buttons remain neutral. Colour on avatars identifies people; cover art identifies songs.
+Aux's visual signature is the current song's cover beside the group-authored queue. Playback progress uses a muted amber accent. Navigation and primary buttons remain neutral. Name-stable Blobatar faces identify people; cover art identifies songs.
 
 The desktop canvas is capped at 1208px inside equal 22px gutters. At that width, the queue has 860px, the gutter 28px, and the player 320px. Tablet navigation folds into a menu. On phones, song rows keep voting and removal visible, controls use touch-sized targets, and the player follows the queue and request controls.
 
@@ -36,10 +36,12 @@ Room invitations use a dedicated loading state before showing a room or returnin
 
 Room codes use the Rare UI `swamimalode07/rare-ui/otp-input` component, installed with the shadcn CLI. The shared primitive retains its slot transitions, keyboard handling, and paste support, with project-specific TypeScript guards, first-input refs for React Hook Form, error descriptions, read-only invite display, dark colors, and reduced-motion support. Motion features load lazily; the glyph renderer is separate from input behavior.
 
-People show Active now with a tab count, or Away for a saved membership without a recent heartbeat. Explicitly departed members remain in request attribution but leave the people view. The host action is labelled End session and leave so its effect on everyone is clear.
+People show an accessible status dot for Active now or Away without a tab count. Compact horizontal cards place the avatar beside an ellipsized name, role and queued-song count; the main column fits up to three cards, with one column on narrow screens. Explicitly departed members remain in request attribution but leave the people view. The host action is labelled End session and leave so its effect on everyone is clear.
 
 ## Responsive codes and reduced chrome
 
 Code entry and invitation display use six equal grid columns across their container. Slots have no fixed width or minimum width that can overflow a narrow dialog. Invite labels target only direct children, so typography rules cannot override the widget’s centered character layer. Caret alignment follows cell resizing. Host-only controls are absent from member settings; the redundant people-view invite action and Shared session label have been removed. Connector setup instructions remain in technical documentation instead of the room UI.
 
 Settings and room notes do not advertise or impose a per-person song cap. The remaining queue-order explanation describes behavior without suggesting a personal request cap.
+
+Input focus uses a softly faded amber border and low-opacity halo instead of a separated hard outline. Navigation reads room, Discover music and people, with the theme toggle after Room settings. Notifications enter at the top. Share surfaces show remaining room hours and minutes.

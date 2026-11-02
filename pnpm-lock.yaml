@@ -207,6 +207,9 @@ settings:
 importers:
   .:
     dependencies:
+      "@blobatar/react":
+        specifier: 2.7.0
+        version: 2.7.0(blobatar@2.7.0(react@19.3.1))(react@19.3.1)
       "@hookform/resolvers":
         specifier: 7.0.1
         version: 7.0.1(react-hook-form@7.91.0(@types/react@19.3.0)(react@19.3.1))(valibot@1.5.0(@typescript/typescript6@6.0.2))(zod@4.6.7)
@@ -216,6 +219,9 @@ importers:
       better-sqlite3:
         specifier: 13.0.3
         version: 13.0.3
+      blobatar:
+        specifier: 2.7.0
+        version: 2.7.0(react@19.3.1)
       cn:
         specifier: 0.5.1
         version: 0.5.1
@@ -433,6 +439,15 @@ packages:
         integrity: sha512-WCsemW40Cpc6gouC1SrY6PBaZ+oLRlEVY9XBvZBI7il/HyUrb2nJ505wE1MHEFyDZNnrWDEuy4jL50WVHfTTSQ==,
       }
     engines: { node: ">=6.9.0" }
+
+  "@blobatar/react@2.7.0":
+    resolution:
+      {
+        integrity: sha512-rysDM1+2qoeIwIezVw/em+ZxOMyqqjqJOGNEvtOOU1nFp0jmzyEjlXtJTDM6xPKamq59pq6wcG9+mHIUZV572A==,
+      }
+    peerDependencies:
+      blobatar: 2.x
+      react: ">=18"
 
   "@cacheable/memory@2.2.0":
     resolution:
@@ -2341,6 +2356,20 @@ packages:
       }
     engines: { node: ">=22" }
 
+  blobatar@2.7.0:
+    resolution:
+      {
+        integrity: sha512-tL1p2J3dXE/Z9U/ITwHqU7HBHmTH+Am+hif1J1hWAhvFT1VYC2HG+eXtN7081yuY+L2lrp9bs/VaF7dVH3S2jw==,
+      }
+    peerDependencies:
+      react: ">=18"
+      vue: ">=3"
+    peerDependenciesMeta:
+      react:
+        optional: true
+      vue:
+        optional: true
+
   brace-expansion@5.0.12:
     resolution:
       {
@@ -4039,6 +4068,11 @@ snapshots:
       "@babel/helper-string-parser": 7.29.11
       "@babel/helper-validator-identifier": 7.29.7
 
+  "@blobatar/react@2.7.0(blobatar@2.7.0(react@19.3.1))(react@19.3.1)":
+    dependencies:
+      blobatar: 2.7.0(react@19.3.1)
+      react: 19.3.1
+
   "@cacheable/memory@2.2.0":
     dependencies:
       "@cacheable/utils": 2.5.0
@@ -4972,6 +5006,10 @@ snapshots:
   better-sqlite3@13.0.3:
     dependencies:
       node-addon-api: 8.9.2
+
+  blobatar@2.7.0(react@19.3.1):
+    optionalDependencies:
+      react: 19.3.1
 
   brace-expansion@5.0.12:
     dependencies:

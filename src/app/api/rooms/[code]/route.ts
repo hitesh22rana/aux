@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/server/http/request-body";
 import {
   roomActionSchema,
   roomCodeSchema,
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest, context: Context) {
   try {
     checkOrigin(request);
     const code = v.parse(codeSchema, (await context.params).code.toUpperCase());
-    const data = v.parse(joinRequestSchema, await request.json());
+    const data = v.parse(joinRequestSchema, await readJsonBody(request));
     return withSession(
       joinRoom(code, data.name, request.cookies.get(`aux_${code}`)?.value),
       request,
@@ -54,7 +55,7 @@ export async function PATCH(request: NextRequest, context: Context) {
   try {
     checkOrigin(request);
     const code = v.parse(codeSchema, (await context.params).code.toUpperCase());
-    const action = v.parse(roomActionSchema, await request.json());
+    const action = v.parse(roomActionSchema, await readJsonBody(request));
     return NextResponse.json(
       await liveCommand(
         code,

@@ -76,15 +76,19 @@ export const roomViewSchema = v.object({
   ),
 });
 export const roomActionSchema = v.variant("type", [
-  v.object({
+  v.strictObject({
+    type: v.literal("kick"),
+    memberId: v.pipe(v.string(), v.regex(/^[a-f0-9]{24}$/)),
+  }),
+  v.strictObject({
     type: v.literal("add"),
-    trackId: v.pipe(v.string(), v.maxLength(50)),
+    trackId: v.pipe(v.string(), v.minLength(1), v.maxLength(50)),
   }),
-  v.object({
+  v.strictObject({
     type: v.picklist(["vote", "remove", "promote"]),
-    itemId: v.pipe(v.string(), v.maxLength(50)),
+    itemId: v.pipe(v.string(), v.minLength(1), v.maxLength(50)),
   }),
-  v.object({ type: v.picklist(["toggle", "next", "lock", "end"]) }),
+  v.strictObject({ type: v.picklist(["toggle", "next", "lock", "end"]) }),
 ]);
 export const searchResultsSchema = v.object({ tracks: v.array(trackSchema) });
 export const connectionStatusSchema = v.object({

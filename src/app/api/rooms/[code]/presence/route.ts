@@ -1,3 +1,4 @@
+import { readJsonBody } from "@/server/http/request-body";
 import { NextRequest, NextResponse } from "next/server";
 import * as v from "valibot";
 import { roomCodeSchema } from "@/features/listening-room/contracts";
@@ -8,7 +9,7 @@ import {
 } from "@/features/listening-room/server";
 import { checkOrigin, errorResponse } from "@/server/http/responses";
 import { AppError } from "@/shared/lib/errors";
-const schema = v.object({
+const schema = v.strictObject({
   connectionId: v.pipe(v.string(), v.uuid()),
   type: v.picklist(["online", "offline"]),
 });
@@ -21,7 +22,7 @@ export async function POST(
     checkOrigin(request);
     const code = v.parse(roomCodeSchema, (await context.params).code);
     const member = identify(code, request.cookies.get(`aux_${code}`)?.value);
-    const data = v.parse(schema, await request.json());
+    const data = v.parse(schema, await readJsonBody(request));
     if (data.type === "online" && readRoom(code).ended)
       throw new AppError("This session has ended.", 410);
     await updatePresence(code, member.id, data.connectionId, data.type);

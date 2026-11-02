@@ -6,6 +6,7 @@ import {
   save,
   mutate,
   revokeMembership,
+  removeMember,
   type Action,
 } from "@/features/listening-room/server/room-repository";
 import { AppError } from "@/shared/lib/errors";
@@ -74,6 +75,11 @@ export async function liveCommand(
   action: Action,
 ) {
   const { room, member } = authorizeLive(code, token);
+  if (action.type === "kick") {
+    const updated = removeMember(code, token, action.memberId);
+    await clearMemberPresence(code, action.memberId).catch(() => {});
+    return liveView(updated.room, updated.me);
+  }
   if (["lock", "end"].includes(action.type)) {
     if (!member.host) throw new AppError("Only the host can do that.", 403);
     if (action.type === "end") {

@@ -177,3 +177,14 @@ The optional shadcn CLI configuration in `components.json` maps generated primit
 Choose **Your sessions** beside Create a room on the home page to see rooms this browser is still authorized to access. The list checks HTTP-only room cookies against server membership, expiry, and room status. It does not discover other users’ rooms or depend on client-stored room codes. Returning home or refreshing preserves membership; explicitly leaving removes it. Ended and expired rooms are excluded. Resume opens the same invitation-loading flow as a direct room URL.
 
 There is no per-person pending-song limit. The existing session-wide budget of 1,000 accepted request IDs remains to bound the durable deduplication record. Duplicate songs, paused requests, membership permissions, 12-member capacity, and 24-hour room expiry still apply.
+
+Hosts can remove a guest from the people view, including an Away member. This
+revokes their existing browser membership across tabs; accepted requests stay in
+the queue. It is session removal, not a permanent identity ban. Pause new requests
+in Room settings if the host also needs to prevent new joins.
+
+People totals include Away memberships. Names consistently generate local Blobatar
+avatars, and sharing panels show the remaining time on the original 24-hour room.
+For public hosting, configure the reverse proxy to replace forwarded host headers,
+serve HTTPS, and enforce request timeouts and rate limits. The app bounds JSON
+mutation bodies to 16 KiB and validates each request with Valibot.

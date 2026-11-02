@@ -1,4 +1,5 @@
 "use client";
+import { MemberAvatar } from "@/shared/ui/member-avatar";
 import { ArrowUp, ChevronUp, X } from "lucide-react";
 import {
   time,
@@ -46,8 +47,8 @@ export function QueueRow({
         manual={manual}
       />
       <span className="requester">
-        <span className="mini-avatar" style={{ background: member?.color }}>
-          {member?.name[0]}
+        <span className="mini-avatar">
+          <MemberAvatar name={member?.name ?? "Former member"} size={22} />
         </span>
         {member?.id === room.me ? "You" : member?.name}
       </span>

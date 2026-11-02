@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useSyncExternalStore } from "react";
-import { flushSync } from "react-dom";
 import { useTheme } from "next-themes";
 import { Sun, Moon } from "lucide-react";
 import styles from "./theme-toggle.module.css";
@@ -31,7 +30,9 @@ export function ThemeToggle() {
     }
     // Commit the new theme before the browser captures the incoming colors.
     transitionRef.current = document.startViewTransition(() => {
-      flushSync(() => setTheme(nextTheme));
+      setTheme(nextTheme);
+      document.documentElement.dataset.theme = nextTheme;
+      document.documentElement.style.colorScheme = nextTheme;
     });
     // A superseded transition can reject its ready promise during rapid clicks.
     void transitionRef.current.ready.catch(() => {});

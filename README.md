@@ -95,3 +95,7 @@ Light and Dark. Aux follows your device preference by default, including changes
 while open, until you choose a theme. Your choice is saved on this browser and
 applies across rooms, dialogs, and notifications. Theme changes use a short
 crossfade in browsers supporting View Transitions and respect reduced motion.
+
+Hosts can remove room members from the people view. Member avatars are generated
+locally and stay consistent for the same name. Sharing panels show the time left
+before the room expires, and people totals include members who are Away.
