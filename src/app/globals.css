@@ -14,6 +14,7 @@
 :root {
   color-scheme: dark;
   --bg: #000;
+  --grain-image: url("/textures/grain-dark.png");
   --paper: #111;
   --raised: #222;
   --ink: #fff;
@@ -43,6 +44,7 @@
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #fafafa;
+  --grain-image: url("/textures/grain-light.png");
   --paper: #f0f0f0;
   --raised: #e8e8e8;
   --ink: #171717;
@@ -76,7 +78,10 @@ html {
 }
 body {
   margin: 0;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: var(--grain-image);
+  background-repeat: repeat;
+  background-size: 128px 128px;
   color: var(--ink);
   font-family: "Inter", sans-serif;
   font-size: 14px;

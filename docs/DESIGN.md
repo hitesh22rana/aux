@@ -58,3 +58,11 @@ People cards reserve three equal grid columns on desktop, two on medium screens,
 and one on phones. Unoccupied columns stay empty, so one or two members never
 stretch across the whole desktop row. Each Blobatar sits in a circular raised-color
 frame with its presence badge attached to the upper right; names retain ellipsis.
+
+Background grain uses two original, deterministic 128px PNG tiles in
+`public/textures/`, totaling less than 17 KiB. CSS repeats the cached tile across
+the homepage, room backdrop and room header; dark mode uses faint light grains
+and light mode uses faint dark grains. The alpha is baked into the indexed PNGs,
+so text, artwork and controls are not covered by an overlay. No animation, canvas,
+SVG turbulence filter or client JavaScript is required. Theme changes select the
+matching asset through the shared `--grain-image` token.
