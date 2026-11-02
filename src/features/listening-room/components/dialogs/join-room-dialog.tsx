@@ -1,13 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { valibotResolver } from "@hookform/resolvers/valibot";
 import { ArrowRight } from "lucide-react";
-
 import { toast } from "sonner";
 import { errorMessage } from "@/shared/api/http-client";
+import { FormField, FieldError } from "@/shared/ui/form-field";
 import { roomRequest } from "../../api/room-client";
-
+import { joinRoomSchema } from "../../model/form-schemas";
 import type { RoomView } from "../../model/contracts";
-
 import { RoomModal } from "./room-modal";
 interface JoinRoomDialogProps {
   onClose: () => void;
@@ -17,77 +17,76 @@ interface JoinRoomDialogProps {
 }
 export function JoinRoomDialog({
   onClose,
-  onRoomReady: setActiveRoom,
+  onRoomReady,
   sessionBusy,
   initialJoinCode,
 }: JoinRoomDialogProps) {
-  const [person, setPerson] = useState("");
-  const [formError, setFormError] = useState("");
-  const [formBusy, setFormBusy] = useState(false);
-  const [joinCode, setJoinCode] = useState(initialJoinCode);
-  const busy = sessionBusy || formBusy;
-  async function join(e: React.FormEvent) {
-    e.preventDefault();
-    setFormBusy(true);
-    setFormError("");
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: valibotResolver(joinRoomSchema),
+    defaultValues: { code: initialJoinCode, person: "" },
+    mode: "onTouched",
+  });
+  const busy = sessionBusy || isSubmitting;
+  const join = handleSubmit(async ({ code, person }) => {
     try {
-      const data = await roomRequest(
-        `/api/rooms/${joinCode.trim().toUpperCase()}`,
-        "POST",
-        { name: person },
-      );
-      setActiveRoom(data);
+      const room = await roomRequest(`/api/rooms/${code}`, "POST", {
+        name: person,
+      });
+      onRoomReady(room);
       onClose();
       toast.success("You’re in. Make yourself heard.");
-    } catch (e) {
-      setFormError(errorMessage(e));
-    } finally {
-      setFormBusy(false);
+    } catch (error) {
+      setError("root.server", { message: errorMessage(error) });
     }
-  }
+  });
   return (
     <RoomModal
       onClose={onClose}
       title="Join the listening room."
       description="Get the six-character code from your host and join the room."
     >
-      <form onSubmit={join} className="form-stack">
-        <label>
-          Room code
+      <form noValidate onSubmit={join} className="form-stack" aria-busy={busy}>
+        <FormField
+          id="join-code"
+          label="Room code"
+          required
+          error={errors.code?.message}
+        >
           <input
+            id="join-code"
+            {...register("code")}
             className="code-input"
-            value={joinCode}
-            onChange={(e) =>
-              setJoinCode(
-                e.target.value.toUpperCase().replace(/[^A-F0-9]/g, ""),
-              )
-            }
             placeholder="A1B2C3"
-            minLength={6}
-            maxLength={6}
-            pattern="[A-Fa-f0-9]{6}"
-            required
             autoCapitalize="characters"
             autoComplete="off"
             spellCheck={false}
+            aria-required="true"
+            aria-invalid={!!errors.code}
+            aria-describedby={errors.code ? "join-code-error" : undefined}
           />
-        </label>
-        <label>
-          Your name
+        </FormField>
+        <FormField
+          id="join-person"
+          label="Your name"
+          required
+          error={errors.person?.message}
+        >
           <input
-            value={person}
-            onChange={(e) => setPerson(e.target.value)}
+            id="join-person"
+            {...register("person")}
             placeholder="The name behind the good taste"
-            required
-            maxLength={24}
             autoComplete="given-name"
+            aria-required="true"
+            aria-invalid={!!errors.person}
+            aria-describedby={errors.person ? "join-person-error" : undefined}
           />
-        </label>
-        {formError && (
-          <p className="form-error" role="alert">
-            {formError}
-          </p>
-        )}
+        </FormField>
+        <FieldError message={errors.root?.server?.message} />
         <button disabled={busy} className="button primary w-full" type="submit">
           {busy ? "Joining the room…" : "Join the room"}
           <ArrowRight size={17} />

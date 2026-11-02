@@ -1,6 +1,6 @@
-import { z } from "zod";
+import * as v from "valibot";
 
-const errorSchema = z.object({ error: z.string() });
+const errorSchema = v.object({ error: v.string() });
 
 export function errorMessage(
   error: unknown,
@@ -12,7 +12,7 @@ export function errorMessage(
 /** Validate untrusted JSON at the boundary before it reaches client state. */
 export async function requestJson<T>(
   path: string,
-  schema: z.ZodType<T>,
+  schema: v.GenericSchema<unknown, T>,
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
@@ -29,17 +29,17 @@ export async function requestJson<T>(
     );
   }
   if (!response.ok) {
-    const failure = errorSchema.safeParse(data);
+    const failure = v.safeParse(errorSchema, data);
     throw new Error(
       failure.success
-        ? failure.data.error
+        ? failure.output.error
         : "Couldn’t complete the request. Please try again.",
     );
   }
-  const result = schema.safeParse(data);
+  const result = v.safeParse(schema, data);
   if (!result.success)
     throw new Error(
       "The server returned unexpected data. Please refresh and try again.",
     );
-  return result.data;
+  return result.output;
 }

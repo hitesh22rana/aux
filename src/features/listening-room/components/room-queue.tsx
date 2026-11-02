@@ -1,8 +1,7 @@
 "use client";
 
-import { ArrowDown, ListMusic, Settings2, ShieldCheck } from "lucide-react";
+import { ArrowDown, ListMusic, ShieldCheck } from "lucide-react";
 import type { RoomView, RoomAction, Track } from "../model/contracts";
-import type { RoomDialog } from "./room-dialogs";
 
 import { QueueRow } from "./queue-row";
 interface RoomQueueProps {
@@ -13,7 +12,6 @@ interface RoomQueueProps {
   busy: boolean;
   totalMinutes: number;
   lookup: (id: string | null) => Track | undefined;
-  openDialog: (dialog: RoomDialog) => void;
   onAction: (action: RoomAction) => Promise<void>;
 }
 function queueSubtitle(
@@ -34,7 +32,6 @@ export function RoomQueue({
   busy,
   totalMinutes,
   lookup,
-  openDialog,
   onAction,
 }: RoomQueueProps) {
   return (
@@ -47,10 +44,6 @@ export function RoomQueue({
           </h2>
           <p>{queueSubtitle(room, manual, totalMinutes)}</p>
         </div>
-        <button className="text-button" onClick={() => openDialog("settings")}>
-          <Settings2 size={15} />
-          <span>Queue settings</span>
-        </button>
       </div>
       <div className="queue-table">
         <div className="queue-table-head">
@@ -107,7 +100,6 @@ function EmptyQueue({ live, manual }: { live: boolean; manual: boolean }) {
             document
               .getElementById(manual ? "linked-song-url" : "spotify-search")
               ?.focus();
-          else document.getElementById("demo-song-search")?.focus();
         }}
       >
         Find a song

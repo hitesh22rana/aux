@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import * as v from "valibot";
 import { checkOrigin, errorResponse } from "@/server/http/responses";
 import {
   authorizeSpotify,
@@ -25,9 +25,9 @@ import { AppError } from "@/shared/lib/errors";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ code: string }> };
-const codeSchema = z.string().regex(/^[A-F0-9]{6}$/);
+const codeSchema = v.pipe(v.string(), v.regex(/^[A-F0-9]{6}$/));
 async function context(request: NextRequest, ctx: Context) {
-  const code = codeSchema.parse((await ctx.params).code.toUpperCase());
+  const code = v.parse(codeSchema, (await ctx.params).code.toUpperCase());
   return { code, token: request.cookies.get(`aux_${code}`)?.value };
 }
 export async function GET(request: NextRequest, ctx: Context) {
@@ -36,7 +36,10 @@ export async function GET(request: NextRequest, ctx: Context) {
     const { member } = authorizeSpotify(code, token);
     const query = request.nextUrl.searchParams.get("q");
     if (query !== null) {
-      const q = z.string().trim().min(2).max(160).parse(query);
+      const q = v.parse(
+        v.pipe(v.string(), v.trim(), v.minLength(2), v.maxLength(160)),
+        query,
+      );
       return NextResponse.json(
         { tracks: await searchTracks(code, token, q) },
         { headers: { "Cache-Control": "no-store" } },
@@ -61,22 +64,22 @@ export async function GET(request: NextRequest, ctx: Context) {
     return errorResponse(error);
   }
 }
-const schema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("connect") }),
-  z.object({ type: z.literal("disconnect") }),
-  z.object({ type: z.literal("sync") }),
-  z.object({ type: z.literal("recover") }),
-  z.object({
-    type: z.literal("request"),
-    uri: z.string().regex(/^spotify:track:[A-Za-z0-9]{22}$/),
-    requestId: z.uuid(),
+const schema = v.variant("type", [
+  v.object({ type: v.literal("connect") }),
+  v.object({ type: v.literal("disconnect") }),
+  v.object({ type: v.literal("sync") }),
+  v.object({ type: v.literal("recover") }),
+  v.object({
+    type: v.literal("request"),
+    uri: v.pipe(v.string(), v.regex(/^spotify:track:[A-Za-z0-9]{22}$/)),
+    requestId: v.pipe(v.string(), v.uuid()),
   }),
 ]);
 export async function POST(request: NextRequest, ctx: Context) {
   try {
     checkOrigin(request);
     const { code, token } = await context(request, ctx);
-    const action = schema.parse(await request.json());
+    const action = v.parse(schema, await request.json());
     if (action.type === "request")
       return NextResponse.json(
         await requestTrack(code, token, action.uri, action.requestId),

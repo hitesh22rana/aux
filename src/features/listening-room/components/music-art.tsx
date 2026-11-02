@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Music2, Play } from "lucide-react";
-import type { Provider, Track } from "@/features/listening-room/model/catalog";
+import type { Provider, Track } from "@/features/listening-room/model/room";
 import { providerDefinition } from "@/features/listening-room/model/providers";
 export function Art({
   track,
@@ -27,7 +27,7 @@ export function Art({
           ? "Shared song artwork placeholder"
           : track.url
             ? `${track.album} cover`
-            : `${track.album} - illustrated demo artwork`
+            : `${track.album} cover`
       }
       className={`album-art ${className}`}
       loading={priority ? "eager" : "lazy"}

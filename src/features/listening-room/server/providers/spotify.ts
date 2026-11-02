@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { redis } from "@/server/redis/connection";
 import { queueKeys } from "@/features/listening-room/server/queue-keys";
-import { z } from "zod";
+import * as v from "valibot";
 import { parseUrl } from "@/shared/lib/url";
 import { AppError } from "@/shared/lib/errors";
 import {
@@ -11,7 +11,7 @@ import {
   disconnect,
   type Tokens,
 } from "@/features/listening-room/server/spotify-storage";
-import type { Track } from "@/features/listening-room/model/catalog";
+import type { Track } from "@/features/listening-room/model/room";
 
 export const spotifyScopes =
   "user-read-playback-state user-modify-playback-state user-read-private";
@@ -46,11 +46,11 @@ export function spotifyConfig() {
 }
 import { PlaybackError as SpotifyError } from "../playback-port";
 export { PlaybackError as SpotifyError } from "../playback-port";
-const tokenSchema = z.object({
-  access_token: z.string().min(1),
-  refresh_token: z.string().min(1).optional(),
-  expires_in: z.number().positive(),
-  scope: z.string().optional(),
+const tokenSchema = v.object({
+  access_token: v.pipe(v.string(), v.minLength(1)),
+  refresh_token: v.optional(v.pipe(v.string(), v.minLength(1))),
+  expires_in: v.pipe(v.number(), v.gtValue(0)),
+  scope: v.optional(v.string()),
 });
 export async function requestTokens(
   params: Record<string, string>,
@@ -77,7 +77,7 @@ export async function requestTokens(
       "Spotify authorization expired or was rejected. Reconnect your account.",
       401,
     );
-  const token = tokenSchema.parse(await response.json());
+  const token = v.parse(tokenSchema, await response.json());
   const grantedScopes = new Set(token.scope?.split(" "));
   if (
     token.scope &&
@@ -234,25 +234,25 @@ export async function spotifyRequest<T>(
   }
   throw new SpotifyError("Reconnect Spotify to continue.", 401);
 }
-const trackSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  uri: z.string().regex(/^spotify:track:[A-Za-z0-9]{22}$/),
-  type: z.literal("track"),
-  duration_ms: z.number(),
-  is_local: z.boolean().optional(),
-  is_playable: z.boolean().optional(),
-  restrictions: z.object({ reason: z.string() }).optional(),
-  artists: z.array(z.object({ name: z.string() })),
-  album: z.object({
-    name: z.string(),
-    images: z.array(z.object({ url: z.string().url() })),
+const trackSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  uri: v.pipe(v.string(), v.regex(/^spotify:track:[A-Za-z0-9]{22}$/)),
+  type: v.literal("track"),
+  duration_ms: v.number(),
+  is_local: v.optional(v.boolean()),
+  is_playable: v.optional(v.boolean()),
+  restrictions: v.optional(v.object({ reason: v.string() })),
+  artists: v.array(v.object({ name: v.string() })),
+  album: v.object({
+    name: v.string(),
+    images: v.array(v.object({ url: v.pipe(v.string(), v.url()) })),
   }),
 });
 export function mapSpotifyTrack(raw: unknown): Track | null {
-  const parsed = trackSchema.safeParse(raw);
+  const parsed = v.safeParse(trackSchema, raw);
   if (!parsed.success) return null;
-  const t = parsed.data;
+  const t = parsed.output;
   if (t.is_local || t.is_playable === false || t.restrictions) return null;
   const image = t.album.images[0]?.url;
   return {

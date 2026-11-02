@@ -8,7 +8,7 @@ import {
   roomViewSchema,
   searchResultsSchema,
 } from "@/features/listening-room/model/contracts";
-import type { RoomView, Track } from "@/features/listening-room/model/catalog";
+import type { RoomView, Track } from "@/features/listening-room/model/room";
 type SearchState =
   | { status: "idle"; query: string }
   | { status: "loading"; query: string }

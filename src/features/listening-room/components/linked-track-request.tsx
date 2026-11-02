@@ -1,14 +1,16 @@
 "use client";
+import type { InferOutput } from "valibot";
 import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { valibotResolver } from "@hookform/resolvers/valibot";
+import { FormField, FieldError } from "@/shared/ui/form-field";
+import { linkedTrackSchema } from "../model/form-schemas";
 import { ExternalLink, Link2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { requestJson, errorMessage } from "@/shared/api/http-client";
 import { roomViewSchema } from "@/features/listening-room/model/contracts";
-import type { RoomView } from "@/features/listening-room/model/catalog";
-import {
-  parseTrackLink,
-  providerDefinition,
-} from "@/features/listening-room/model/providers";
+import type { RoomView } from "@/features/listening-room/model/room";
+import { providerDefinition } from "@/features/listening-room/model/providers";
 export function LinkedTrackRequest({
   room,
   onUpdate,
@@ -17,21 +19,27 @@ export function LinkedTrackRequest({
   onUpdate: (room: RoomView) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [url, setUrl] = useState("");
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting: busy },
+  } = useForm({
+    resolver: valibotResolver(linkedTrackSchema(room.provider)),
+    defaultValues: { url: "", title: "", artist: "" },
+    mode: "onTouched",
+  });
   const requestRef = useRef<{ fingerprint: string; id: string } | null>(null);
   const definition = providerDefinition(room.provider);
   const host = room.members.some((m) => m.id === room.me && m.host);
   const locked = room.ended || (!host && room.locked);
-  const parsed = url ? parseTrackLink(url) : null;
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError("");
+  async function submit({
+    url,
+    title,
+    artist,
+  }: InferOutput<ReturnType<typeof linkedTrackSchema>>) {
+    if (locked) return;
     const fingerprint = JSON.stringify([
       url.trim(),
       title.trim(),
@@ -59,15 +67,11 @@ export function LinkedTrackRequest({
         },
       );
       onUpdate(data);
-      setUrl("");
-      setTitle("");
-      setArtist("");
+      reset();
       requestRef.current = null;
       toast.success(`Added to the ${room.provider} shared queue`);
     } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
+      setError("root.server", { message: errorMessage(e) });
     }
   }
   return (
@@ -101,57 +105,71 @@ export function LinkedTrackRequest({
           <ExternalLink size={13} />
         </a>
       </div>
-      <form onSubmit={submit} className="form-stack linked-request-form">
-        <label>
-          Song link
+      <form
+        noValidate
+        onSubmit={(event) => {
+          void handleSubmit(submit)(event);
+        }}
+        className="form-stack linked-request-form"
+        aria-busy={busy}
+      >
+        <FormField
+          id="linked-song-url"
+          label="Song link"
+          required
+          error={errors.url?.message}
+        >
           <input
             id="linked-song-url"
             type="url"
-            required
-            maxLength={2048}
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            {...register("url")}
             placeholder={`Paste a full ${room.provider} song URL`}
             autoComplete="off"
+            aria-required="true"
+            aria-invalid={!!errors.url}
+            aria-describedby={errors.url ? "linked-song-url-error" : undefined}
           />
-        </label>
-        {url && parsed && parsed.provider !== room.provider && (
-          <p className="connection-error">
-            This link is from {parsed.provider}. This room uses {room.provider}.
-            Find the same song there before requesting it.
-          </p>
-        )}
+        </FormField>
         <div className="linked-title-fields">
-          <label>
-            Song title
+          <FormField
+            id="linked-song-title"
+            label="Song title"
+            required
+            error={errors.title?.message}
+          >
             <input
-              required
-              maxLength={120}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              id="linked-song-title"
+              {...register("title")}
               placeholder="What’s the song called?"
+              aria-required="true"
+              aria-invalid={!!errors.title}
+              aria-describedby={
+                errors.title ? "linked-song-title-error" : undefined
+              }
             />
-          </label>
-          <label>
-            Artist <span>(optional)</span>
+          </FormField>
+          <FormField
+            id="linked-song-artist"
+            label="Artist"
+            error={errors.artist?.message}
+          >
             <input
-              maxLength={120}
-              value={artist}
-              onChange={(e) => setArtist(e.target.value)}
+              id="linked-song-artist"
+              {...register("artist")}
               placeholder="Who’s it by?"
+              aria-invalid={!!errors.artist}
+              aria-describedby={
+                errors.artist ? "linked-song-artist-error" : undefined
+              }
             />
-          </label>
+          </FormField>
         </div>
         <p className="live-search-hint">
           The title and artist are provided by you. Aux validates the service
           and link format, but does not verify song availability or match songs
           across services.
         </p>
-        {error && (
-          <p className="connection-error" role="alert">
-            {error}
-          </p>
-        )}
+        <FieldError message={errors.root?.server?.message} />
         <button
           className="button primary"
           type="submit"

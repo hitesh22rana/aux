@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ZodError } from "zod";
+import * as v from "valibot";
 import { parseUrl } from "@/shared/lib/url";
 import { AppError } from "@/shared/lib/errors";
 export function errorResponse(error: unknown) {
@@ -8,7 +8,7 @@ export function errorResponse(error: unknown) {
       { error: error.message },
       { status: error.status },
     );
-  if (error instanceof ZodError || error instanceof SyntaxError)
+  if (v.isValiError(error) || error instanceof SyntaxError)
     return NextResponse.json(
       { error: "Check your details and try again." },
       { status: 400 },

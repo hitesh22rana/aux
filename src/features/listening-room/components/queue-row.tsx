@@ -5,7 +5,7 @@ import {
   type QueueItem,
   type RoomView,
   type Track,
-} from "@/features/listening-room/model/catalog";
+} from "@/features/listening-room/model/room";
 import type { RoomAction } from "@/features/listening-room/model/contracts";
 import {
   Art,

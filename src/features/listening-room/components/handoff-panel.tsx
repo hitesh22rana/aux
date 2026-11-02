@@ -2,14 +2,14 @@
 import { useState } from "react";
 import { Check, ExternalLink, Headphones, ListMusic, X } from "lucide-react";
 import { toast } from "sonner";
-import { z } from "zod";
+import * as v from "valibot";
 import { requestJson, errorMessage } from "@/shared/api/http-client";
 import { roomViewSchema } from "@/features/listening-room/model/contracts";
-const handoffResponseSchema = z.union([
+const handoffResponseSchema = v.union([
   roomViewSchema,
-  z.object({ room: roomViewSchema }),
+  v.object({ room: roomViewSchema }),
 ]);
-import type { RoomView } from "@/features/listening-room/model/catalog";
+import type { RoomView } from "@/features/listening-room/model/room";
 import { providerDefinition } from "@/features/listening-room/model/providers";
 export function HandoffPanel({
   room,

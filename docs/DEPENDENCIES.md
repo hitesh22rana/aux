@@ -1,6 +1,6 @@
 # Dependency versions and upgrades
 
-Application versions were checked against the registry's stable `latest` tags and the official image manifests on 2026-11-01. pnpm 12.16.1 was checked on 2026-11-02. Application dependencies use exact pins with a committed lockfile. Images use explicit stable release tags so upgrades can be reviewed and reproduced.
+Application versions were checked against the registry's stable `latest` tags and the official image manifests on 2026-11-01. pnpm 12.16.1 and the form dependencies were checked on 2026-11-02. Application dependencies use exact pins with a committed lockfile. Images use explicit stable release tags so upgrades can be reviewed and reproduced.
 
 | Component                                     | Version |
 | --------------------------------------------- | ------- |
@@ -20,6 +20,9 @@ Application versions were checked against the registry's stable `latest` tags an
 | Next.js ESLint plugin                         | 16.4.3  |
 | Playwright                                    | 1.64.1  |
 | Vitest                                        | 5.0.5   |
+| React Hook Form                               | 7.91.0  |
+| Hook Form resolvers                           | 7.0.1   |
+| Valibot                                       | 1.5.0   |
 | Prettier                                      | 3.9.10  |
 
 The complete dependency list is in `package.json` and `pnpm-lock.yaml`. Other dependencies were already at their current stable releases. Server and client package version numbers are independent; the Redis client does not need to share the server's major version.

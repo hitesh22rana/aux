@@ -13,7 +13,7 @@ import {
   time,
   type RoomView,
   type Track,
-} from "@/features/listening-room/model/catalog";
+} from "@/features/listening-room/model/room";
 import type { RoomAction } from "@/features/listening-room/model/contracts";
 import {
   Art,
@@ -121,7 +121,7 @@ function destinationLabel(
   live: boolean,
   manual: boolean,
 ): string {
-  if (!live) return "Playback preview · no audio";
+  if (!live) return "Waiting for playback";
   if (manual) return `Host-led · ${room.provider}`;
   return room.playback?.device
     ? `Playing on ${room.playback.device.name}`
@@ -130,7 +130,7 @@ function destinationLabel(
 function toggleLabel(live: boolean, playing: boolean): string {
   if (live)
     return playing ? "Pause Spotify playback" : "Resume Spotify playback";
-  return playing ? "Pause demo playback" : "Play demo playback";
+  return playing ? "Pause playback" : "Resume playback";
 }
 function CurrentTrack({
   room,
@@ -181,9 +181,7 @@ function PlaybackTimeline({
       <div
         className="playback-progress"
         role="progressbar"
-        aria-label={
-          live ? "Spotify playback progress" : "Simulated song progress"
-        }
+        aria-label={live ? "Spotify playback progress" : "Song progress"}
         aria-valuenow={Math.round(progress)}
         aria-valuemin={0}
         aria-valuemax={100}

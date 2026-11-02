@@ -36,12 +36,13 @@ The app runs at `http://127.0.0.1:3000`. The complete stack runs with `docker co
 - `pnpm build`: production build.
 - `pnpm test`: browser tests against a running app on port 3000. Use system Chromium or `pnpm exec playwright install chromium`.
 - `pnpm format`: Prettier.
+- `npx react-doctor@latest --verbose`: React diagnostics. Run this before every push and fix reported issues before pushing.
 
 Run checks relevant to the change. Queue/playback changes need integration tests; UI flows need browser checks. Container changes require Compose validation, an image build, and web/worker startup checks. Mocked providers do not establish real-device playback support.
 
 ## Implementation
 
-Keep feature logic colocated. Routes use the feature's client, contracts, or server public entrypoint. Shared code and infrastructure must not import features. Client modules must not import server implementations. Keep server-only guards. Use strict TypeScript, Zod at data boundaries, existing Tailwind utilities, and scoped CSS Modules.
+Keep feature logic colocated. Routes use the feature's client, contracts, or server public entrypoint. Shared code and infrastructure must not import features. Client modules must not import server implementations. Keep server-only guards. Use strict TypeScript, Valibot at data boundaries and React Hook Form with the Valibot resolver for forms, existing Tailwind utilities, and scoped CSS Modules.
 
 Preserve atomic, durable queue acknowledgment, deduplication, leases, and uncertain-command reconciliation. Manual handoff dequeues only after host confirmation. Enforce permissions server-side.
 

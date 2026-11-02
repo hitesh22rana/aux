@@ -19,7 +19,7 @@ import {
   liveView,
   queueControl,
 } from "@/features/listening-room/server/live-queue";
-import type { Member } from "@/features/listening-room/model/catalog";
+import type { Member } from "@/features/listening-room/model/room";
 const locks = new Map<string, Promise<unknown>>();
 export async function inRoom<T>(
   code: string,
@@ -42,10 +42,7 @@ export function authorizeLive(
   const member = identify(code, token);
   const room = readRoom(code);
   if (room.mode !== "live")
-    throw new AppError(
-      "This is a demo room. Start a live room to manage playback.",
-      409,
-    );
+    throw new AppError("Start a new room to manage playback.", 409);
   if (room.ended) throw new AppError("This session has ended.", 410);
   if (host && !member.host)
     throw new AppError("Only the host can control the player.", 403);

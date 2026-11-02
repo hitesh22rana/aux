@@ -11,7 +11,7 @@ import {
   parseTrackLink,
   providerDefinition,
 } from "@/features/listening-room/model/providers";
-import type { Track } from "@/features/listening-room/model/catalog";
+import type { Track } from "@/features/listening-room/model/room";
 function context(code: string, token: string | undefined, host = false) {
   const c = authorizeLive(code, token, host);
   if (providerDefinition(c.room.provider).control !== "handoff")

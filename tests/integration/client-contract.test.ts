@@ -1,10 +1,11 @@
+import * as v from "valibot";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { requestJson, errorMessage } from "@/shared/api/http-client";
 import {
   roomViewSchema,
   roomActionSchema,
 } from "@/features/listening-room/model/contracts";
-import { demoRoom } from "@/features/listening-room/model/catalog";
+import { emptyRoom } from "@/features/listening-room/model/room";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -19,7 +20,7 @@ describe("client API contracts", () => {
     ).rejects.toThrow("unexpected data");
   });
   it("validates a complete room and carries request headers and cancellation", async () => {
-    const room = demoRoom();
+    const room = emptyRoom();
     const fetcher = vi.fn().mockResolvedValue(Response.json(room));
     const controller = new AbortController();
     vi.stubGlobal("fetch", fetcher);
@@ -60,11 +61,12 @@ describe("client API contracts", () => {
   });
   it("requires each action's own fields", () => {
     expect(
-      roomActionSchema.safeParse({ type: "add", itemId: "request" }).success,
+      v.safeParse(roomActionSchema, { type: "add", itemId: "request" }).success,
     ).toBe(false);
-    expect(roomActionSchema.safeParse({ type: "vote" }).success).toBe(false);
+    expect(v.safeParse(roomActionSchema, { type: "vote" }).success).toBe(false);
     expect(
-      roomActionSchema.safeParse({ type: "remove", itemId: "request" }).success,
+      v.safeParse(roomActionSchema, { type: "remove", itemId: "request" })
+        .success,
     ).toBe(true);
   });
   it("handles unknown thrown values without unsafe error casts", () => {

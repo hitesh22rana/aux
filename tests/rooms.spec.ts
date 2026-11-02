@@ -1,54 +1,72 @@
-import { test, expect } from "@playwright/test";
-test("host and member share a persisted queue with enforced permissions", async ({
+import { test, expect, type Page } from "@playwright/test";
+
+async function createRoom(page: Page, provider = "Apple Music") {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Create a room", exact: true })
+    .click();
+  await page.getByRole("radio", { name: provider, exact: true }).check();
+  await page
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Host");
+  await page.getByRole("button", { name: "Create room", exact: true }).click();
+  await expect(page).toHaveURL(/room=[A-F0-9]{6}/);
+  return new URL(page.url()).searchParams.get("room")!;
+}
+async function addSong(page: Page, title: string, id = "456") {
+  await page
+    .getByRole("textbox", { name: "Song link", exact: true })
+    .fill(`https://music.apple.com/us/album/test/123?i=${id}`);
+  await page
+    .getByRole("textbox", { name: "Song title", exact: true })
+    .fill(title);
+  await page
+    .getByRole("button", { name: "Add song request", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: `Vote for ${title}` }),
+  ).toBeVisible();
+}
+
+test("host and member share durable requests and enforce room permissions", async ({
   browser,
 }) => {
   const host = await browser.newContext();
   const guest = await browser.newContext();
   const h = await host.newPage();
   const g = await guest.newPage();
-  await h.goto("/");
-  await h.getByRole("button", { name: "Create a room", exact: true }).click();
-  await h.getByLabel("Use demo playback (silent)").check();
-  await h.getByLabel("Your name", { exact: true }).fill("Alex");
-  await h.getByLabel("Give your room a name").fill("Shared session");
-  await h.getByRole("button", { name: "Create room" }).click();
-  await expect(h).toHaveURL(/room=[A-F0-9]{6}/);
-  const code = new URL(h.url()).searchParams.get("room")!;
-  await expect(
-    h.getByRole("heading", { name: "Shared session" }),
-  ).toBeVisible();
-  await h
-    .getByRole("button", { name: "Add Golden to queue", exact: true })
-    .click();
-  await expect(
-    h.getByRole("button", { name: "Golden already queued" }),
-  ).toBeDisabled();
-  await g.goto(`/?room=${code}`);
-  await expect(g.getByRole("dialog")).toBeVisible();
-  await g.getByLabel("Your name", { exact: true }).fill("Maya");
+  const code = await createRoom(h);
+  await g.goto(h.url());
+  await g
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Guest");
   await g.getByRole("button", { name: "Join the room", exact: true }).click();
   await expect(g.getByRole("dialog")).not.toBeVisible();
-  await g
-    .getByRole("button", { name: "Add Sunflower to queue", exact: true })
-    .click();
+  await addSong(g, "Shared pick");
   await expect(
-    h.getByRole("button", { name: "Vote for Sunflower" }),
+    h.getByRole("button", { name: "Vote for Shared pick" }),
   ).toBeVisible({ timeout: 8000 });
+  await g.getByRole("button", { name: "Vote for Shared pick" }).click();
   await expect(
-    g.getByRole("button", { name: "Play demo playback" }),
-  ).toBeDisabled();
-  const forbidden = await guest.request.patch(`/api/rooms/${code}`, {
-    data: { type: "next" },
-  });
-  expect(forbidden.status()).toBe(403);
-  await g.getByRole("button", { name: "Vote for Sunflower" }).click();
-  await expect(
-    g.getByRole("button", { name: "Vote for Sunflower" }),
+    g.getByRole("button", { name: "Vote for Shared pick" }),
   ).toHaveAttribute("aria-pressed", "true");
+  expect(
+    (
+      await guest.request.patch(`/api/rooms/${code}`, {
+        data: { type: "lock" },
+      })
+    ).status(),
+  ).toBe(403);
   await h.reload();
   await expect(
-    h.getByRole("button", { name: "Vote for Sunflower" }),
+    h.getByRole("button", { name: "Vote for Shared pick" }),
   ).toBeVisible();
+  await expect(
+    h.getByRole("button", { name: "Room settings", exact: true }),
+  ).toHaveCount(1);
+  await expect(h.getByRole("button", { name: "Queue settings" })).toHaveCount(
+    0,
+  );
   await h.getByRole("button", { name: "Room settings", exact: true }).click();
   await h
     .getByRole("button", { name: "Pause new requests", exact: true })
@@ -56,65 +74,57 @@ test("host and member share a persisted queue with enforced permissions", async 
   await expect(
     h.getByRole("button", { name: "Pause new requests", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  const locked = await guest.request.patch(`/api/rooms/${code}`, {
-    data: { type: "add", trackId: "ilahi" },
-  });
-  expect(locked.status()).toBe(403);
-  await h.getByRole("button", { name: "Close dialog" }).click();
-  await h.getByRole("button", { name: "Skip to next song" }).click();
-  await expect(h.locator(".current-track h2")).toHaveText("Sunflower");
+  expect(
+    (
+      await guest.request.post(`/api/rooms/${code}/handoff`, {
+        data: {
+          type: "request",
+          url: "https://music.apple.com/us/album/test/123?i=789",
+          title: "Blocked",
+          requestId: crypto.randomUUID(),
+        },
+      })
+    ).status(),
+  ).toBe(403);
   await host.close();
   await guest.close();
 });
-test("mobile demo search, queue actions, navigation and empty states", async ({
+
+test("mobile room has real empty states, one settings entry and working navigation", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
+  await expect(page.getByText(/demo|sample group/i)).toHaveCount(0);
+  await expect(page.locator(".queue-row")).toHaveCount(0);
+  await createRoom(page);
   await expect(
-    page.getByRole("heading", { name: "The listening room" }),
+    page.getByRole("heading", { name: "Your next great song goes here." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Room settings", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Room settings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Room settings" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await addSong(page, "Mobile song");
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.getByRole("button", { name: "The people", exact: false }).click();
+  await expect(
+    page.getByRole("heading", { name: "The people", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
+      () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page.getByRole("button", { name: "Open navigation" }).click();
-  await page
-    .getByRole("button", { name: "Discover music", exact: true })
-    .click();
-  await page
-    .getByRole("textbox", { name: "Search songs" })
-    .fill("no-match-ever");
-  await expect(page.getByText("No songs found.")).toBeVisible();
-  await page.getByRole("button", { name: "Reset search", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Add Dreams to queue", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Dreams already queued" }),
-  ).toBeDisabled();
-  await page.getByRole("button", { name: "Open navigation" }).click();
-  await page
-    .getByRole("button", { name: "The room", exact: false })
-    .first()
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Vote for Dreams" }),
-  ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Remove Dreams", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Vote for Dreams" }),
-  ).not.toBeVisible();
-  await page.screenshot({
-    path: "test-results/aux-mobile.png",
-    fullPage: true,
-  });
 });
 
-test("API rejects invalid, duplicate and excess requests and closes ended rooms", async ({
+test("API validates requests, limits the queue and rejects ended sessions", async ({
   playwright,
 }) => {
   const host = await playwright.request.newContext({
@@ -126,15 +136,18 @@ test("API rejects invalid, duplicate and excess requests and closes ended rooms"
   expect(
     (
       await host.post("/api/rooms", {
-        data: { name: "", person: "Alex", provider: "Spotify" },
+        data: { name: " ", person: "Host", provider: "Apple Music" },
       })
     ).status(),
   ).toBe(400);
   const created = await host.post("/api/rooms", {
-    data: { name: "API session", person: "Alex", provider: "Spotify" },
+    data: { name: "API session", person: "Host", provider: "Apple Music" },
   });
-  expect(created.ok()).toBeTruthy();
-  const { code } = await created.json();
+  expect(created.ok()).toBe(true);
+  const { code, queue, mode, current } = await created.json();
+  expect(queue).toEqual([]);
+  expect(current).toBeNull();
+  expect(mode).toBe("live");
   expect((await stranger.get(`/api/rooms/${code}`)).status()).toBe(401);
   expect(
     (
@@ -144,31 +157,38 @@ test("API rejects invalid, duplicate and excess requests and closes ended rooms"
       })
     ).status(),
   ).toBe(403);
-  for (const trackId of ["golden", "sunflower", "ilahi", "less"])
-    expect(
-      (
-        await host.patch(`/api/rooms/${code}`, {
-          data: { type: "add", trackId },
-        })
-      ).ok(),
-    ).toBeTruthy();
+  const request = (id: string) => ({
+    type: "request",
+    url: `https://music.apple.com/us/album/test/123?i=${id}`,
+    title: "API pick",
+    requestId: crypto.randomUUID(),
+  });
   expect(
     (
-      await host.patch(`/api/rooms/${code}`, {
-        data: { type: "add", trackId: "sunflower" },
+      await host.post(`/api/rooms/${code}/handoff`, {
+        data: { ...request("456"), title: " " },
       })
+    ).status(),
+  ).toBe(400);
+  for (const id of ["456", "457", "458"])
+    expect(
+      (
+        await host.post(`/api/rooms/${code}/handoff`, { data: request(id) })
+      ).ok(),
+    ).toBe(true);
+  expect(
+    (
+      await host.post(`/api/rooms/${code}/handoff`, { data: request("456") })
     ).status(),
   ).toBe(409);
   expect(
     (
-      await host.patch(`/api/rooms/${code}`, {
-        data: { type: "add", trackId: "dreams" },
-      })
+      await host.post(`/api/rooms/${code}/handoff`, { data: request("459") })
     ).status(),
   ).toBe(409);
   expect(
     (await host.patch(`/api/rooms/${code}`, { data: { type: "end" } })).ok(),
-  ).toBeTruthy();
+  ).toBe(true);
   expect(
     (
       await stranger.post(`/api/rooms/${code}`, {
@@ -192,7 +212,9 @@ test("live rooms use the Aux queue and explain missing Spotify configuration", a
   await page
     .getByRole("button", { name: "Create a room", exact: true })
     .click();
-  await page.getByLabel("Your name", { exact: true }).fill("Live host");
+  await page
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Live host");
   await page.getByRole("button", { name: "Create room" }).click();
   await expect(page).toHaveURL(/room=[A-F0-9]{6}/);
   await expect(
@@ -224,7 +246,9 @@ test("Apple Music host-led handoff preserves requests until explicit host confir
   await h.getByRole("button", { name: "Create a room", exact: true }).click();
   await expect(h.getByRole("radio")).toHaveCount(8);
   await h.getByRole("radio", { name: /Apple Music/ }).check();
-  await h.getByLabel("Your name", { exact: true }).fill("Apple host");
+  await h
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Apple host");
   await h.getByRole("button", { name: "Create room" }).click();
   await expect(h).toHaveURL(/room=[A-F0-9]{6}/);
   await expect(
@@ -234,13 +258,19 @@ test("Apple Music host-led handoff preserves requests until explicit host confir
     h.getByRole("button", { name: "Connect Spotify", exact: true }),
   ).not.toBeVisible();
   await g.goto(h.url());
-  await g.getByLabel("Your name", { exact: true }).fill("Member");
+  await g
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Member");
   await g.getByRole("button", { name: "Join the room", exact: true }).click();
   await g
-    .getByLabel("Song link", { exact: true })
+    .getByRole("textbox", { name: "Song link", exact: true })
     .fill("https://music.apple.com/us/album/test/123?i=456");
-  await g.getByLabel("Song title", { exact: true }).fill("Our shared song");
-  await g.getByLabel("Artist", { exact: false }).fill("Our artist");
+  await g
+    .getByRole("textbox", { name: "Song title", exact: true })
+    .fill("Our shared song");
+  await g
+    .getByRole("textbox", { name: "Artist", exact: true })
+    .fill("Our artist");
   await g
     .getByRole("button", { name: "Add song request", exact: true })
     .click();
@@ -300,7 +330,9 @@ test("Amazon Music and the remaining handoff services are selectable on mobile",
       page.getByRole("radio", { name: new RegExp(name) }),
     ).toBeEnabled();
   await page.getByRole("radio", { name: /Amazon Music/ }).check();
-  await page.getByLabel("Your name", { exact: true }).fill("Amazon host");
+  await page
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Amazon host");
   await page.getByRole("button", { name: "Create room" }).click();
   await expect(
     page.getByRole("region", { name: "Amazon Music handoff" }),
@@ -311,9 +343,11 @@ test("Amazon Music and the remaining handoff services are selectable on mobile",
     ),
   ).toBe(true);
   await page
-    .getByLabel("Song link", { exact: true })
+    .getByRole("textbox", { name: "Song link", exact: true })
     .fill("https://music.amazon.com/tracks/B012345678");
-  await page.getByLabel("Song title", { exact: true }).fill("Shared song");
+  await page
+    .getByRole("textbox", { name: "Song title", exact: true })
+    .fill("Shared song");
   await page
     .getByRole("button", { name: "Add song request", exact: true })
     .click();
@@ -356,7 +390,9 @@ test("catalog search clears stale results when the query changes", async ({
   await page
     .getByRole("button", { name: "Create a room", exact: true })
     .click();
-  await page.getByLabel("Your name", { exact: true }).fill("Search host");
+  await page
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Search host");
   await page.getByRole("button", { name: "Create room", exact: true }).click();
   const search = page.getByRole("textbox", { name: "Search Spotify songs" });
   await search.fill("gold");
@@ -377,4 +413,159 @@ test("catalog search clears stale results when the query changes", async ({
   await expect(
     page.getByText("Searching Spotify…", { exact: true }),
   ).not.toBeVisible();
+});
+
+test("create and join forms validate inline and focus the invalid field", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Create a room", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Create room", exact: true }).click();
+  await expect(
+    page.getByText("Enter your name.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Your name", exact: true }),
+  ).toBeFocused();
+  await expect(page.locator("form")).toHaveAttribute("novalidate", "");
+  await page.getByRole("textbox", { name: "Your name", exact: true }).fill(" ");
+  await page
+    .getByRole("textbox", { name: "Give your room a name", exact: true })
+    .fill("");
+  await page.getByRole("button", { name: "Create room", exact: true }).click();
+  await expect(
+    page.getByText("Enter a room name.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await page
+    .getByRole("button", { name: "Join a room", exact: true })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: "Join the room", exact: true })
+    .click();
+  await expect(
+    page.getByText("Enter the six-character room code."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Room code", exact: true }),
+  ).toBeFocused();
+  await page
+    .getByRole("textbox", { name: "Room code", exact: true })
+    .fill("zzzzzz");
+  await page
+    .getByRole("textbox", { name: "Your name", exact: true })
+    .fill("Name");
+  await page
+    .getByRole("button", { name: "Join the room", exact: true })
+    .click();
+  await expect(
+    page.getByText("Enter the six-character room code."),
+  ).toBeVisible();
+});
+
+test("song form validates service links inline and aligns required and unmarked labels", async ({
+  page,
+}) => {
+  await createRoom(page);
+  await page
+    .getByRole("button", { name: "Add song request", exact: true })
+    .click();
+  await expect(
+    page.getByText("Enter a song link.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Enter the song title.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Song link", exact: true }),
+  ).toBeFocused();
+  await expect(page.getByText("(optional)", { exact: true })).toHaveCount(0);
+  await page
+    .getByRole("textbox", { name: "Song link", exact: true })
+    .fill("https://music.amazon.com/tracks/B012345678");
+  await page
+    .getByRole("textbox", { name: "Song title", exact: true })
+    .fill("Cross service");
+  await page
+    .getByRole("button", { name: "Add song request", exact: true })
+    .click();
+  await expect(
+    page.getByText("Use a song link from Apple Music for this room."),
+  ).toBeVisible();
+  await expect(page.locator(".queue-row")).toHaveCount(0);
+  const title = await page
+    .getByRole("textbox", { name: "Song title", exact: true })
+    .boundingBox();
+  const artist = await page
+    .getByRole("textbox", { name: "Artist", exact: true })
+    .boundingBox();
+  expect(title?.y).toBe(artist?.y);
+  await addSong(page, "Valid song");
+  await expect(
+    page.getByRole("textbox", { name: "Song title", exact: true }),
+  ).toHaveValue("");
+  await expect(
+    page.getByRole("textbox", { name: "Song link", exact: true }),
+  ).toHaveValue("");
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement)
+      document.activeElement.blur();
+    window.scrollTo(0, 0);
+  });
+  await page.screenshot({
+    path: "test-results/aux-validated-form.png",
+    fullPage: true,
+  });
+});
+
+test("failed song requests preserve drafts and reuse their idempotency key", async ({
+  page,
+}) => {
+  await createRoom(page);
+  const requestIds: string[] = [];
+  await page.route("**/api/rooms/*/handoff", async (route) => {
+    const body = route.request().postDataJSON();
+    if (body.type !== "request") {
+      await route.continue();
+      return;
+    }
+    requestIds.push(body.requestId);
+    if (requestIds.length === 1)
+      await route.fulfill({
+        status: 503,
+        json: { error: "Queue temporarily unavailable. Try again." },
+      });
+    else await route.continue();
+  });
+  await page
+    .getByRole("textbox", { name: "Song link", exact: true })
+    .fill("https://music.apple.com/us/album/123?i=456");
+  await page
+    .getByRole("textbox", { name: "Song title", exact: true })
+    .fill("Retry song");
+  await page
+    .getByRole("button", { name: "Add song request", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Queue temporarily unavailable." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Song title", exact: true }),
+  ).toHaveValue("Retry song");
+  await page
+    .getByRole("button", { name: "Add song request", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Vote for Retry song" }),
+  ).toBeVisible();
+  expect(requestIds).toHaveLength(2);
+  expect(requestIds[0]).toBe(requestIds[1]);
+  await expect(
+    page.getByRole("textbox", { name: "Song title", exact: true }),
+  ).toHaveValue("");
 });

@@ -1,28 +1,13 @@
 "use client";
-import {
-  RoomHeader,
-  RoomHeading,
-  RoomSummary,
-  RoomInviteCard,
-  MobilePlayerSummary,
-  type RoomTab,
-} from "./room-layout";
-import { RoomQueue } from "./room-queue";
-import { RoomMembers } from "./room-members";
-import { DemoDiscovery } from "./demo-discovery";
+import { RoomHeader, RoomHeading, type RoomTab } from "./room-layout";
+import { RoomWorkspace } from "./room-workspace";
 import styles from "../listening-room.module.css";
 
 import { useCallback, useState } from "react";
 import { ArrowRight, Check, CircleHelp, ShieldCheck } from "lucide-react";
 
-import { SpotifyConnection } from "@/features/listening-room/components/spotify-connection";
-import { SpotifySearch } from "@/features/listening-room/components/spotify-search";
-import { HandoffPanel } from "@/features/listening-room/components/handoff-panel";
-import { LinkedTrackRequest } from "@/features/listening-room/components/linked-track-request";
-
 import { type RoomAction } from "@/features/listening-room/model/contracts";
 
-import { NowPlaying } from "@/features/listening-room/components/now-playing";
 import { RoomDialogs, type RoomDialog as Dialog } from "./room-dialogs";
 import { useRoomSession } from "../hooks/use-room-session";
 
@@ -36,6 +21,7 @@ export function ListeningRoom() {
     setJoinCode(code);
     setDialog("join");
   }, []);
+  const session = useRoomSession(onJoinRequired);
   const {
     room,
     real,
@@ -45,15 +31,10 @@ export function ListeningRoom() {
     isHost,
     live,
     manual,
-    current,
-    elapsed,
-    progress,
-    lookup,
-    acceptPlayback,
     setActiveRoom,
     action: roomAction,
     resetSession,
-  } = useRoomSession(onJoinRequired);
+  } = session;
   const busy = sessionBusy;
   async function action(value: RoomAction) {
     await roomAction(value);
@@ -68,9 +49,6 @@ export function ListeningRoom() {
     setDialog(null);
     setTab("queue");
   }
-  const totalMinutes = Math.ceil(
-    room.queue.reduce((n, q) => n + (lookup(q.trackId)?.duration ?? 0), 0) / 60,
-  );
   return (
     <div className={styles.root}>
       <a href="#main" className="skip-link">
@@ -114,106 +92,32 @@ export function ListeningRoom() {
               </button>
             </div>
           )}
-          <div className="workspace-grid">
-            <div className="left-column">
-              {current && (
-                <MobilePlayerSummary
-                  current={current}
-                  manual={manual}
-                  room={room}
-                />
-              )}
-              {tab === "queue" && (
-                <>
-                  <RoomSummary
-                    room={room}
-                    real={real}
-                    live={live}
-                    openDialog={openDialog}
-                  />
-
-                  <RoomQueue
-                    room={room}
-                    live={live}
-                    manual={manual}
-                    isHost={isHost}
-                    busy={busy}
-                    totalMinutes={totalMinutes}
-                    lookup={lookup}
-                    openDialog={openDialog}
-                    onAction={action}
-                  />
-                </>
-              )}
-              {tab === "people" ? (
-                <RoomMembers room={room} real={real} openDialog={openDialog} />
-              ) : manual ? (
-                <LinkedTrackRequest
-                  key={room.code}
-                  room={room}
-                  onUpdate={acceptPlayback}
-                />
-              ) : live ? (
-                <SpotifySearch
-                  key={room.code}
-                  room={room}
-                  onUpdate={acceptPlayback}
-                />
-              ) : (
-                <DemoDiscovery
-                  key={tab}
-                  room={room}
-                  busy={busy}
-                  isHost={isHost}
-                  expanded={tab === "discover"}
-                  onAction={action}
-                  onBrowse={() =>
-                    setTab(tab === "discover" ? "queue" : "discover")
-                  }
-                />
-              )}
-            </div>
-            <aside className="right-column">
-              {manual ? (
-                <HandoffPanel
-                  key={room.code}
-                  room={room}
-                  onUpdate={acceptPlayback}
-                />
-              ) : (
-                live && (
-                  <SpotifyConnection
-                    key={room.code}
-                    room={room}
-                    onSync={acceptPlayback}
-                  />
-                )
-              )}
-              <NowPlaying
-                room={room}
-                current={current}
-                live={live}
-                manual={manual}
-                isHost={isHost}
-                busy={busy}
-                liked={liked}
-                elapsed={elapsed}
-                progress={progress}
-                onLike={() => setLiked((previous) => !previous)}
-                onAction={action}
-              />
-              <RoomInviteCard room={room} real={real} openDialog={openDialog} />
-
-              <div className="session-note">
-                <ShieldCheck size={16} />
-                <p>
-                  {isHost ? "You set the tone." : "Everyone gets a turn."}
-                  <br />
-                  <span>Three requests each. Room for everyone.</span>
-                </p>
-              </div>
-            </aside>
-          </div>
+          {!real && (
+            <section className="welcome-state">
+              <ShieldCheck size={28} />
+              <h2>Good music starts with your people.</h2>
+              <p>
+                Start a shared queue, invite your group, and play through your
+                music app.
+              </p>
+              <button
+                className="button secondary"
+                onClick={() => openDialog("join")}
+              >
+                Join a room <ArrowRight size={16} />
+              </button>
+            </section>
+          )}
+          {real && (
+            <RoomWorkspace
+              session={session}
+              tab={tab}
+              liked={liked}
+              onLike={() => setLiked((previous) => !previous)}
+              openDialog={openDialog}
+              onAction={action}
+            />
+          )}
           <footer className="page-footer">
             <span>Made for listening together.</span>
             <span>

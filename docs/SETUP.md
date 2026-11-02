@@ -98,7 +98,7 @@ Apple’s [SystemMusicPlayer](https://developer.apple.com/documentation/musickit
 
 1. Create an app in the [Spotify developer dashboard](https://developer.spotify.com/dashboard). Register the exact redirect URI above and enable Web API use.
 2. Add your Client ID to `.env.local`, then restart the web app and worker. PKCE requires no Spotify client secret.
-3. Create an Aux room with demo playback unchecked, then select **Connect Spotify**. Only the host authorizes an account.
+3. Create an Aux room with Spotify selected, then select **Connect Spotify**. Only the host authorizes an account.
 4. Open Spotify on the host’s phone, select that phone as the active player, and start a song. Use the host device or connect it to your preferred audio output.
 5. Invite members. Search by song and artist or paste a Spotify track URL. Requests are saved in **Aux’s queue**, where they can be voted on, removed, or moved to next.
 6. The host selects **Start / resume Aux** to hand playback control to the worker. It plays a single selected track URI at a time. Host skip selects the next Aux request rather than using Spotify’s native queue.
@@ -107,7 +107,7 @@ A Spotify account can host one connected Aux room at a time, so separate workers
 
 ## Queue ownership and durability
 
-**Redis is the source of truth for live queue order, requests, votes, active dispatch, and playback snapshots.** SQLite stores room membership and encrypted Spotify credentials. Demo rooms retain the original SQLite/browser simulation and do not require Spotify or Redis.
+**Redis is the source of truth for live queue order, requests, votes, active dispatch, and playback snapshots.** SQLite stores room membership and encrypted Spotify credentials. Every room starts empty and uses durable server-side queue management. Redis must be reachable before room creation succeeds.
 
 - An optimistic-version Lua operation saves each queue mutation and appends its wake-up event to a Redis Stream in one atomic execution.
 - A separate Node worker uses `XREADGROUP`, acknowledges completed events with `XACK`, and recovers abandoned deliveries with `XAUTOCLAIM`. Acknowledged event payloads are deleted; the durable queue snapshot remains. The stream is an outbox, not a permanent audit log.
@@ -128,7 +128,7 @@ Queue delivery is at-least-once internally. Spotify offers no external idempoten
 - The worker advances when observed playback indicates a track finished near its expected end. Spotify has no completion webhook in this flow: polling is approximate, transitions may have gaps, and pausing near a song’s end is inherently ambiguous. Mid-song manual changes pause Aux automation instead of overriding the host. Use the host controls to continue.
 - If Redis is unavailable, live operations fail rather than accepting requests into temporary memory. If the worker is offline, already accepted requests remain saved and the UI reports its status. Keep the worker supervised in deployment.
 - Ending or disconnecting stops future Aux dispatches; it does not clear Spotify’s existing context or necessarily stop an in-flight/current song. Leaving the browser view does not end the room.
-- **Eight services are selectable.** Spotify uses the automatic adapter; the other seven use the explicitly labelled host-led handoff adapter. Cross-service song matching is not implemented. The demo catalog uses illustrative metadata and original SVG covers.
+- **Eight services are selectable.** Spotify uses the automatic adapter; the other seven use the explicitly labelled host-led handoff adapter. Cross-service song matching is not implemented.
 - SQLite metadata/credentials still require shared persistent disk. Multiple workers are coordinated through Redis, but deploying web and worker on separate machines requires migrating that SQLite adapter to a shared database. This is not a serverless-only deployment.
 
 ## Verification
@@ -152,7 +152,7 @@ Real Spotify authentication and external-app playback still need verification wi
 See [Architecture and contribution boundaries](ARCHITECTURE.md) for the full layout and import rules.
 
 - `src/features/listening-room/components/` and `hooks/` own the room interface and browser session lifecycle.
-- `src/features/listening-room/model/` owns shared contracts, service capabilities, link parsing, and demo data.
+- `src/features/listening-room/model/` owns shared contracts, service capabilities, link parsing, empty session state, and form schemas.
 - `src/features/listening-room/server/` owns authorization, room persistence, durable queue state, worker dispatch, handoff, and provider adapters.
 - `src/server/` owns database connections and HTTP infrastructure; `src/shared/` owns generic client transport and accessible UI.
 - `src/app/api/` exposes HTTP routes; `src/workers/playback.ts` starts the worker.

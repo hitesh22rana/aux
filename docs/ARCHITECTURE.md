@@ -15,7 +15,7 @@ src/
       dialogs/                      Individually owned create/join/invite/settings forms
     hooks/use-room-session.ts       Session restoration, polling and commands
     hooks/use-spotify-connection.ts  Connection status, account commands and polling
-    model/                          Contracts, demo catalog and service capabilities
+    model/                          Contracts, form schemas and service capabilities
     listening-room.module.css       Scoped feature styles
     server/
       index.ts                      Public server-only entrypoint
@@ -65,7 +65,7 @@ ESLint enforces these boundaries for production source. Keep public exports expl
 | DRY                   | Runtime room schemas supply TypeScript types and response validation. Room actions share one schema at the client/server boundary. Generic HTTP/error handling and the dialog primitive are shared.      |
 | YAGNI                 | One listening-room feature, one background worker, and existing durable storage remain. There are no empty feature folders, generic repository frameworks, new global stores, or new fetching libraries. |
 
-The demo simulates playback locally. Its UI state is separate from accepted live requests, which are persisted and authorized by the server. Do not use browser state as proof of live queue delivery or playback.
+Before joining, the browser shows an empty welcome screen. Every new room starts with no songs or fabricated listeners. All room mutations are authorized and persisted server-side; there is no local playback simulation. Existing rooms from obsolete non-live versions must be replaced with a new room.
 
 ## Data flow and invariants
 
@@ -89,8 +89,16 @@ The structure follows the colocation, feature boundaries, thin routes, and minim
 
 ## React health checks
 
-Run `npx react-doctor@latest` for an optional repository audit. This is an ad hoc tool, not a runtime dependency or an additional CI requirement. Review diagnostics against actual behavior before making changes.
+Run `npx react-doctor@latest --verbose` before every push and fix reported diagnostics. This is an ad hoc development tool, not a runtime dependency. Review diagnostics against actual behavior before making changes.
 
 The 2026-11-02 cleanup split complex room, dialog, playback and connection components; moved connection lifecycle into a feature hook; made search loading/results query-specific; guarded malformed URL input; validated persisted room data before account binding; replaced repeated scope-array scans with a set; and parallelized independent queue/heartbeat reads. Existing queue durability, host permissions and manual-confirmation behavior remain covered by the test suites.
 
 React Doctor 0.9.22 reported no local diagnostics after the cleanup. Its remote score service was unavailable, so no numeric score is claimed.
+
+## Forms and validation
+
+Valibot defines request, response, provider, persistence, and form contracts. Infer TypeScript types from these schemas. React Hook Form uses `valibotResolver` for create, join, and song-request forms. Shared field schemas enforce matching client and API constraints; server authorization and service-link checks remain mandatory.
+
+Forms use `noValidate` to replace browser validation bubbles with inline errors connected through `aria-describedby` and `aria-invalid`. Validation starts on touch or submit, then updates as users correct the field. The first invalid field receives focus. Required labels use a red asterisk and inputs expose `aria-required`; Artist remains unmarked. Server failures preserve the draft. Successful song requests reset the form, and retries retain an idempotency key for the same submitted values.
+
+The header has one Room settings entry, visible on desktop and mobile. Queue and room summary sections do not duplicate it.

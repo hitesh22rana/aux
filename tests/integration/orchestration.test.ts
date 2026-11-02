@@ -43,13 +43,7 @@ function raw(uri = one) {
 }
 let player: import("@/features/listening-room/server/providers/spotify").Player;
 function room() {
-  const data = store.createRoom(
-    "Test session",
-    "Host",
-    "Spotify",
-    false,
-    "live",
-  );
+  const data = store.createRoom("Test session", "Host", "Spotify");
   storage.putTokens(data.room.code, {
     access: "test-only-access",
     refresh: "test-only-refresh",
@@ -559,7 +553,7 @@ describe("Spotify protocol and secret storage", () => {
 });
 
 const serviceLinks: [
-  import("@/features/listening-room/model/catalog").Provider,
+  import("@/features/listening-room/model/room").Provider,
   string,
 ][] = [
   ["Apple Music", "https://music.apple.com/us/album/song/123?i=456&ls=1"],
@@ -580,13 +574,7 @@ describe("Multi-provider host-led playback", () => {
       const handoff =
         await import("@/features/listening-room/server/handoff-service");
       const defs = await import("@/features/listening-room/model/providers");
-      const host = store.createRoom(
-        "Service session",
-        "Host",
-        name,
-        false,
-        "live",
-      );
+      const host = store.createRoom("Service session", "Host", name);
       const guest = store.joinRoom(host.room.code, "Member");
       const requestId = randomUUID();
       let view = await handoff.requestLinkedTrack(host.room.code, guest.token, {
@@ -641,13 +629,7 @@ describe("Multi-provider host-led playback", () => {
   it("protects selected requests and cancels a selection without dequeuing", async () => {
     const handoff =
       await import("@/features/listening-room/server/handoff-service");
-    const host = store.createRoom(
-      "Manual session",
-      "Host",
-      "Apple Music",
-      false,
-      "live",
-    );
+    const host = store.createRoom("Manual session", "Host", "Apple Music");
     const guest = store.joinRoom(host.room.code, "Member");
     const view = await handoff.requestLinkedTrack(host.room.code, guest.token, {
       url: required(serviceLinks[0])[1],
@@ -680,13 +662,7 @@ describe("Multi-provider host-led playback", () => {
   it("rejects expired handoffs, mismatched providers, remote controls and ended-room requests", async () => {
     const handoff =
       await import("@/features/listening-room/server/handoff-service");
-    const host = store.createRoom(
-      "Manual session",
-      "Host",
-      "Amazon Music",
-      false,
-      "live",
-    );
+    const host = store.createRoom("Manual session", "Host", "Amazon Music");
     await expect(
       handoff.requestLinkedTrack(host.room.code, host.token, {
         url: required(serviceLinks[0])[1],

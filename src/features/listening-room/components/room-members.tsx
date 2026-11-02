@@ -24,7 +24,7 @@ export function RoomMembers({
           <p>
             {real
               ? "Your room fits up to 12 music lovers."
-              : "Sample listeners in this demo room."}
+              : "Invite people to start listening together."}
           </p>
         </div>
         <button

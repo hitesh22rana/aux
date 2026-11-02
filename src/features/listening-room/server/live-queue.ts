@@ -10,7 +10,7 @@ import type {
   Room,
   PlaybackStatus,
   RoomView,
-} from "@/features/listening-room/model/catalog";
+} from "@/features/listening-room/model/room";
 export type Control = { id: string; type: "toggle" | "next" | "recover" };
 export type Operation = {
   id: string;

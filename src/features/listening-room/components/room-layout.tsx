@@ -77,7 +77,7 @@ export function RoomHeader({
         </nav>
         <div className="header-actions">
           <span className="session-kind">
-            {real ? "Shared session" : "Silent demo"}
+            {real ? "Shared session" : "Listen together"}
           </span>
           <button
             className="text-button join-action"
@@ -87,11 +87,14 @@ export function RoomHeader({
             <ArrowUp size={14} className="rotate-45" />
           </button>
           <button
-            className="icon-button"
-            aria-label="Open settings"
+            className="icon-button room-settings-action"
+            aria-label="Room settings"
+            title="Room settings"
+            disabled={!real}
             onClick={() => openDialog("settings")}
           >
             <Settings2 size={18} />
+            <span>Room settings</span>
           </button>
           <button
             className="mobile-menu icon-button"
@@ -133,7 +136,7 @@ export function RoomHeading({
           {tab === "queue"
             ? real
               ? "Your people. Their picks. One shared soundtrack."
-              : "Everyone gets a say. Try the silent demo or start a shared session."
+              : "Create a room or join your people. Everyone gets a say."
             : tab === "discover"
               ? "A little something for every mood and moment."
               : "Different tastes. One very good soundtrack."}
@@ -188,17 +191,7 @@ export function MobilePlayerSummary({
     </button>
   );
 }
-export function RoomSummary({
-  room,
-  real,
-  live,
-  openDialog,
-}: {
-  room: RoomView;
-  real: boolean;
-  live: boolean;
-  openDialog: (dialog: RoomDialog) => void;
-}) {
+export function RoomSummary({ room, real }: { room: RoomView; real: boolean }) {
   return (
     <section className="room-summary" aria-label="Current room">
       <div className="room-members">
@@ -209,14 +202,11 @@ export function RoomSummary({
             </span>
           ))}
         </div>
-        <span>
-          {room.members.length} in the room
-          {!real && " · sample group"}
-        </span>
+        <span>{room.members.length} in the room</span>
       </div>
       <div className="summary-detail">
         <Headphones size={15} />
-        <span>{live ? room.provider : "Demo playback"}</span>
+        <span>{room.provider}</span>
       </div>
       <span className="summary-status">
         <span className={`live-dot ${room.ended ? "paused" : ""}`} />
@@ -224,16 +214,8 @@ export function RoomSummary({
           ? "Session ended"
           : real
             ? "Room is live"
-            : "No audio streamed"}
+            : "Create a room to begin"}
       </span>
-      <button
-        className="text-button"
-        aria-label="Room settings"
-        onClick={() => openDialog("settings")}
-      >
-        <Settings2 size={15} />
-        Room settings
-      </button>
     </section>
   );
 }

@@ -1,18 +1,18 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
+import * as v from "valibot";
 import { requestJson, errorMessage } from "@/shared/api/http-client";
 import { roomViewSchema, connectionStatusSchema } from "../model/contracts";
 import type { RoomView } from "../model/contracts";
-const connectResponseSchema = z.object({ url: z.url() });
-const disconnectResponseSchema = z.object({ connected: z.literal(false) });
+const connectResponseSchema = v.object({ url: v.pipe(v.string(), v.url()) });
+const disconnectResponseSchema = v.object({ connected: v.literal(false) });
 export function useSpotifyConnection(
   room: RoomView,
   onSync: (room: RoomView) => void,
 ) {
   const host = room.members.some((m) => m.id === room.me && m.host);
-  const [status, setStatus] = useState<z.infer<
+  const [status, setStatus] = useState<v.InferOutput<
     typeof connectionStatusSchema
   > | null>(null);
   const [error, setError] = useState("");

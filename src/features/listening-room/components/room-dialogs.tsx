@@ -54,7 +54,6 @@ export function RoomDialogs(props: RoomDialogsProps) {
           isHost={props.isHost}
           live={props.live}
           manual={props.manual}
-          real={props.real}
           busy={props.sessionBusy}
           onAction={props.onAction}
           onReset={props.onReset}

@@ -1,5 +1,6 @@
+import { linkedTrackEntries } from "@/features/listening-room/contracts";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import * as v from "valibot";
 import { checkOrigin, errorResponse } from "@/server/http/responses";
 import {
   requestLinkedTrack,
@@ -9,20 +10,21 @@ import {
   finishHandoff,
 } from "@/features/listening-room/server";
 export const runtime = "nodejs";
-const schema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("request"),
-    url: z.string().trim().url().max(2048),
-    title: z.string().trim().min(1).max(120),
-    artist: z.string().trim().max(120).default(""),
-    requestId: z.uuid(),
+const schema = v.variant("type", [
+  v.object({
+    type: v.literal("request"),
+    ...linkedTrackEntries,
+    requestId: v.pipe(v.string(), v.uuid()),
   }),
-  z.object({
-    type: z.literal("prepare"),
-    itemId: z.string().max(60).optional(),
+  v.object({
+    type: v.literal("prepare"),
+    itemId: v.optional(v.pipe(v.string(), v.maxLength(60))),
   }),
-  z.object({ type: z.enum(["confirm", "cancel"]), selectionId: z.uuid() }),
-  z.object({ type: z.literal("finish") }),
+  v.object({
+    type: v.picklist(["confirm", "cancel"]),
+    selectionId: v.pipe(v.string(), v.uuid()),
+  }),
+  v.object({ type: v.literal("finish") }),
 ]);
 export async function POST(
   request: NextRequest,
@@ -30,12 +32,12 @@ export async function POST(
 ) {
   try {
     checkOrigin(request);
-    const code = z
-      .string()
-      .regex(/^[A-F0-9]{6}$/)
-      .parse((await ctx.params).code.toUpperCase());
+    const code = v.parse(
+      v.pipe(v.string(), v.regex(/^[A-F0-9]{6}$/)),
+      (await ctx.params).code.toUpperCase(),
+    );
     const token = request.cookies.get(`aux_${code}`)?.value;
-    const action = schema.parse(await request.json());
+    const action = v.parse(schema, await request.json());
     if (action.type === "request")
       return NextResponse.json(await requestLinkedTrack(code, token, action));
     if (action.type === "prepare")

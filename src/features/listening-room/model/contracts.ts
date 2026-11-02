@@ -1,91 +1,97 @@
-import { z } from "zod";
+import * as v from "valibot";
 import { providers } from "@/features/listening-room/model/providers";
 
-export const trackSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  artist: z.string(),
-  album: z.string(),
-  duration: z.number().finite().nonnegative(),
-  art: z.string(),
-  mood: z.string(),
-  provider: z.enum(providers),
-  url: z.string().optional(),
+export const trackSchema = v.object({
+  id: v.string(),
+  title: v.string(),
+  artist: v.string(),
+  album: v.string(),
+  duration: v.pipe(v.number(), v.finite(), v.minValue(0)),
+  art: v.string(),
+  mood: v.string(),
+  provider: v.picklist(providers),
+  url: v.optional(v.string()),
 });
-export const memberSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  color: z.string(),
-  host: z.boolean(),
+export const memberSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  color: v.string(),
+  host: v.boolean(),
 });
-export const queueItemSchema = z.object({
-  id: z.string(),
-  trackId: z.string(),
-  memberId: z.string(),
-  votes: z.array(z.string()),
-  delivery: z.enum(["sending", "sent", "failed", "uncertain"]).optional(),
-  deliveryMessage: z.string().optional(),
+export const queueItemSchema = v.object({
+  id: v.string(),
+  trackId: v.string(),
+  memberId: v.string(),
+  votes: v.array(v.string()),
+  delivery: v.optional(v.picklist(["sending", "sent", "failed", "uncertain"])),
+  deliveryMessage: v.optional(v.string()),
 });
-export const playbackStatusSchema = z.object({
-  connected: z.boolean(),
-  device: z
-    .object({ id: z.string(), name: z.string(), restricted: z.boolean() })
-    .nullable(),
-  syncedAt: z.number(),
-  error: z.string().optional(),
+export const playbackStatusSchema = v.object({
+  connected: v.boolean(),
+  device: v.nullable(
+    v.object({ id: v.string(), name: v.string(), restricted: v.boolean() }),
+  ),
+  syncedAt: v.number(),
+  error: v.optional(v.string()),
 });
-export const roomSchema = z.object({
-  mode: z.enum(["demo", "live"]).optional(),
-  tracks: z.record(z.string(), trackSchema).optional(),
-  playback: playbackStatusSchema.optional(),
-  code: z.string(),
-  name: z.string(),
-  provider: z.enum(providers),
-  members: z.array(memberSchema),
-  queue: z.array(queueItemSchema),
-  current: z.string().nullable(),
-  playing: z.boolean(),
-  position: z.number().finite().nonnegative(),
-  startedAt: z.number().nullable(),
-  locked: z.boolean(),
-  ended: z.boolean(),
-  createdAt: z.number(),
+export const roomSchema = v.object({
+  mode: v.literal("live"),
+  tracks: v.optional(v.record(v.string(), trackSchema)),
+  playback: v.optional(playbackStatusSchema),
+  code: v.string(),
+  name: v.string(),
+  provider: v.picklist(providers),
+  members: v.array(memberSchema),
+  queue: v.array(queueItemSchema),
+  current: v.nullable(v.string()),
+  playing: v.boolean(),
+  position: v.pipe(v.number(), v.finite(), v.minValue(0)),
+  startedAt: v.nullable(v.number()),
+  locked: v.boolean(),
+  ended: v.boolean(),
+  createdAt: v.number(),
 });
-export const roomViewSchema = roomSchema.extend({
-  me: z.string(),
-  orchestration: z
-    .object({
-      workerOnline: z.boolean(),
-      automatic: z.boolean(),
-      uncertain: z.boolean(),
-      activeRequestId: z.string().optional(),
-      inFlightId: z.string().optional(),
-      control: z.enum(["remote", "handoff"]).optional(),
-      handoff: z
-        .object({ id: z.string(), itemId: z.string(), expiresAt: z.number() })
-        .optional(),
-      hostConfirmed: z.boolean().optional(),
-    })
-    .optional(),
+export const roomViewSchema = v.object({
+  ...roomSchema.entries,
+
+  me: v.string(),
+
+  orchestration: v.optional(
+    v.object({
+      workerOnline: v.boolean(),
+      automatic: v.boolean(),
+      uncertain: v.boolean(),
+      activeRequestId: v.optional(v.string()),
+      inFlightId: v.optional(v.string()),
+      control: v.optional(v.picklist(["remote", "handoff"])),
+      handoff: v.optional(
+        v.object({ id: v.string(), itemId: v.string(), expiresAt: v.number() }),
+      ),
+      hostConfirmed: v.optional(v.boolean()),
+    }),
+  ),
 });
-export const roomActionSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("add"), trackId: z.string().max(50) }),
-  z.object({
-    type: z.enum(["vote", "remove", "promote"]),
-    itemId: z.string().max(50),
+export const roomActionSchema = v.variant("type", [
+  v.object({
+    type: v.literal("add"),
+    trackId: v.pipe(v.string(), v.maxLength(50)),
   }),
-  z.object({ type: z.enum(["toggle", "next", "lock", "end"]) }),
+  v.object({
+    type: v.picklist(["vote", "remove", "promote"]),
+    itemId: v.pipe(v.string(), v.maxLength(50)),
+  }),
+  v.object({ type: v.picklist(["toggle", "next", "lock", "end"]) }),
 ]);
-export const searchResultsSchema = z.object({ tracks: z.array(trackSchema) });
-export const connectionStatusSchema = z.object({
-  configured: z.boolean(),
-  connected: z.boolean(),
-  workerOnline: z.boolean().optional(),
+export const searchResultsSchema = v.object({ tracks: v.array(trackSchema) });
+export const connectionStatusSchema = v.object({
+  configured: v.boolean(),
+  connected: v.boolean(),
+  workerOnline: v.optional(v.boolean()),
 });
-export type Track = z.infer<typeof trackSchema>;
-export type Member = z.infer<typeof memberSchema>;
-export type QueueItem = z.infer<typeof queueItemSchema>;
-export type PlaybackStatus = z.infer<typeof playbackStatusSchema>;
-export type Room = z.infer<typeof roomSchema>;
-export type RoomView = z.infer<typeof roomViewSchema>;
-export type RoomAction = z.infer<typeof roomActionSchema>;
+export type Track = v.InferOutput<typeof trackSchema>;
+export type Member = v.InferOutput<typeof memberSchema>;
+export type QueueItem = v.InferOutput<typeof queueItemSchema>;
+export type PlaybackStatus = v.InferOutput<typeof playbackStatusSchema>;
+export type Room = v.InferOutput<typeof roomSchema>;
+export type RoomView = v.InferOutput<typeof roomViewSchema>;
+export type RoomAction = v.InferOutput<typeof roomActionSchema>;

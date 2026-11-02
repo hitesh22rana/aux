@@ -11,14 +11,12 @@ interface SettingsRoomDialogProps {
   isHost: boolean;
   live: boolean;
   manual: boolean;
-  real: boolean;
   busy: boolean;
   onAction: (action: RoomAction) => Promise<void>;
   onReset: () => void;
 }
 function playbackNote(live: boolean, manual: boolean): string {
-  if (!live)
-    return "This is a demo room with simulated controls. Start a live room to use a music service.";
+  if (!live) return "Create or join a room to manage playback.";
   if (manual)
     return "The host opens each selected track in the music app and confirms playback. Aux cannot pause or stop that app. Ending this session only closes the shared queue.";
   return "Aux owns this queue and controls the host’s active Spotify player. Audio stays in Spotify. Ending the session stops future dispatch; the current song may finish in Spotify.";
@@ -29,7 +27,6 @@ export function SettingsRoomDialog({
   isHost,
   live,
   manual,
-  real,
   busy,
   onAction: action,
   onReset: reset,
@@ -98,7 +95,7 @@ export function SettingsRoomDialog({
         )}
         <button className="button secondary flex-1" onClick={reset}>
           <DoorOpen size={16} />
-          {real ? "Leave view" : "Reset demo"}
+          Leave room
         </button>
       </div>
     </RoomModal>

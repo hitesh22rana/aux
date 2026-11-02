@@ -43,7 +43,7 @@ Start the queue worker in a separate terminal:
 pnpm run worker
 ```
 
-Open **http://127.0.0.1:3000**. The initial demo is silent and works without connecting a music account. Live queues require Redis; automatic playback additionally requires configuring the selected integration. Host-led handoff does not require music-service credentials in Aux.
+Open **http://127.0.0.1:3000**. Create or join a room to get started. All queues require Redis; automatic playback additionally requires configuring the selected integration. Host-led handoff does not require music-service credentials in Aux.
 
 See the [technical setup guide](docs/SETUP.md) for environment variables, adapter-specific requirements, supported link formats, persistence, and deployment limits.
 
@@ -59,7 +59,7 @@ The `docker-compose.yaml` file runs the web app, playback worker, and a persiste
 
 ## Built with
 
-Next.js, TypeScript, Tailwind CSS, Redis Streams, SQLite, Radix Dialog, and Sonner. The web app handles rooms and requests; a separate worker coordinates supported automatic playback. Redis stores live queue state, while SQLite stores membership and encrypted integration credentials.
+Next.js, TypeScript, Tailwind CSS, Redis Streams, SQLite, Radix Dialog, React Hook Form, Valibot, and Sonner. The web app handles rooms and requests; a separate worker coordinates supported automatic playback. Redis stores live queue state, while SQLite stores membership and encrypted integration credentials.
 
 ## Checks
 
@@ -71,6 +71,8 @@ pnpm run build
 pnpm run test:unit
 # With the web app running:
 pnpm test
+# Required before every push:
+npx react-doctor@latest --verbose
 ```
 
 The test suites cover queue concurrency, permissions, durable worker delivery, recovery, host-led confirmation, and desktop/mobile browser flows. External-app behavior and audio output still need testing on real devices.

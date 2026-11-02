@@ -1,14 +1,14 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { demoRoom, trackById, type RoomView } from "../model/catalog";
+import { emptyRoom, type RoomView } from "../model/room";
 import { providerDefinition } from "../model/providers";
 import type { RoomAction } from "../model/contracts";
 import { roomRequest } from "../api/room-client";
 import { errorMessage } from "@/shared/api/http-client";
 
 export function useRoomSession(onJoinRequired: (code: string) => void) {
-  const [room, setRoom] = useState<RoomView>(demoRoom);
+  const [room, setRoom] = useState<RoomView>(emptyRoom);
   const [real, setReal] = useState(false);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -21,8 +21,7 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
   const live = real && room.mode === "live";
   const manual =
     live && providerDefinition(room.provider).control === "handoff";
-  const lookup = (id: string | null) =>
-    id ? room.tracks?.[id] || trackById(id) : undefined;
+  const lookup = (id: string | null) => (id ? room.tracks?.[id] : undefined);
   const current = lookup(room.current);
   const acceptPlayback = useCallback((data: RoomView) => {
     setRoom((previous) => (previous.code === data.code ? data : previous));
@@ -113,64 +112,10 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
     setBusy(true);
     mutationVersionRef.current++;
     try {
-      if (real) {
-        const data = await roomRequest(`/api/rooms/${room.code}`, "PATCH", a);
-        setRoom(data);
-        setOffline(false);
-      } else {
-        const next = structuredClone(room);
-        if (a.type === "add") {
-          if (next.queue.filter((q) => q.memberId === room.me).length >= 3)
-            throw new Error("You have 3 songs queued. Give everyone a turn.");
-          if (
-            next.queue.some((q) => q.trackId === a.trackId) ||
-            next.current === a.trackId
-          )
-            throw new Error("That song is already in the queue.");
-          if (!next.current) next.current = a.trackId;
-          else
-            next.queue.push({
-              id: crypto.randomUUID(),
-              trackId: a.trackId,
-              memberId: room.me,
-              votes: [],
-            });
-        }
-        if (a.type === "vote") {
-          const item = next.queue.find((q) => q.id === a.itemId);
-          if (!item) throw new Error("That request is no longer in the queue.");
-          item.votes = item.votes.includes(room.me)
-            ? item.votes.filter((id) => id !== room.me)
-            : [...item.votes, room.me];
-        }
-        if (a.type === "remove")
-          next.queue = next.queue.filter((q) => q.id !== a.itemId);
-        if (a.type === "promote") {
-          const index = next.queue.findIndex((q) => q.id === a.itemId);
-          if (index < 0)
-            throw new Error("That request is no longer in the queue.");
-          const [item] = next.queue.splice(index, 1);
-          if (item) next.queue.unshift(item);
-        }
-        if (a.type === "toggle") {
-          if (!next.current) throw new Error("Add a song first.");
-          next.position = elapsed;
-          next.playing = !next.playing;
-          next.startedAt = next.playing ? now : null;
-        }
-        if (a.type === "next") {
-          next.current = next.queue.shift()?.trackId ?? null;
-          next.position = 0;
-          next.startedAt = next.playing ? now : null;
-          if (!next.current) next.playing = false;
-        }
-        if (a.type === "lock") next.locked = !next.locked;
-        if (a.type === "end") {
-          next.ended = true;
-          next.playing = false;
-        }
-        setRoom(next);
-      }
+      if (!real) return;
+      const data = await roomRequest(`/api/rooms/${room.code}`, "PATCH", a);
+      setRoom(data);
+      setOffline(false);
       if (a.type === "add") toast.success("Added to the shared queue");
       if (live && ["toggle", "next"].includes(a.type))
         toast("Command sent to Spotify. Updating playback shortly.");
@@ -186,7 +131,7 @@ export function useRoomSession(onJoinRequired: (code: string) => void) {
     localStorage.removeItem("aux-room");
     history.replaceState(null, "", "/");
     setReal(false);
-    setRoom(demoRoom());
+    setRoom(emptyRoom());
   }
   return {
     room,

@@ -1,16 +1,17 @@
+import * as v from "valibot";
+import { roomSchema } from "../model/contracts";
 import { db } from "@/server/database/sqlite";
 import { AppError } from "@/shared/lib/errors";
 export { AppError } from "@/shared/lib/errors";
 import "server-only";
 import { randomBytes, createHash } from "node:crypto";
 import {
-  catalog,
   colors,
   type Room,
   type RoomView,
   type Provider,
   type Member,
-} from "@/features/listening-room/model/catalog";
+} from "@/features/listening-room/model/room";
 const hash = (token: string) =>
   createHash("sha256").update(token).digest("hex");
 export function readRoom(code: string): Room {
@@ -22,7 +23,8 @@ export function readRoom(code: string): Room {
       "This room has expired or doesn’t exist. Check the code and try again.",
       404,
     );
-  return JSON.parse(row.data);
+  const room = v.parse(roomSchema, JSON.parse(row.data));
+  return room;
 }
 export function save(room: Room) {
   db.prepare("UPDATE rooms SET data=? WHERE code=?").run(
@@ -51,13 +53,7 @@ function session(code: string, member: string) {
   );
   return token;
 }
-export function createRoom(
-  name: string,
-  person: string,
-  provider: Provider,
-  seed: boolean,
-  mode: "demo" | "live" = "demo",
-) {
+export function createRoom(name: string, person: string, provider: Provider) {
   return db.transaction(() => {
     db.prepare(
       "DELETE FROM sessions WHERE code IN (SELECT code FROM rooms WHERE expires < ?)",
@@ -74,22 +70,14 @@ export function createRoom(
       host: true,
     };
     const room: Room = {
-      mode,
+      mode: "live",
       tracks: {},
       code,
       name,
       provider,
       members: [member],
-      queue:
-        seed && mode === "demo"
-          ? ["sunflower", "ilahi", "less"].map((trackId) => ({
-              id: randomBytes(12).toString("hex"),
-              trackId,
-              memberId: member.id,
-              votes: [],
-            }))
-          : [],
-      current: seed && mode === "demo" ? "golden" : null,
+      queue: [],
+      current: null,
       playing: false,
       position: 0,
       startedAt: null,
@@ -138,78 +126,14 @@ export function mutate(
     const member = identify(code, token);
     const room = readRoom(code);
     if (room.ended) throw new AppError("This session has ended.", 410);
-    if (room.mode === "live" && !["vote", "lock", "end"].includes(action.type))
-      throw new AppError(
-        "Use the connected Spotify player for this action.",
-        409,
-      );
-    const host = () => {
-      if (!member.host) throw new AppError("Only the host can do that.", 403);
-    };
-    if (action.type === "add") {
-      if (room.locked && !member.host)
-        throw new AppError("Requests are paused by the host.", 403);
-      if (!catalog.some((t) => t.id === action.trackId))
-        throw new AppError("Choose a song from the demo catalog.");
-      if (
-        room.queue.some((q) => q.trackId === action.trackId) ||
-        room.current === action.trackId
-      )
-        throw new AppError("That song is already in the queue.", 409);
-      if (room.queue.filter((q) => q.memberId === member.id).length >= 3)
-        throw new AppError(
-          "You have 3 songs queued. Give everyone a turn.",
-          409,
-        );
-      if (!room.current) {
-        room.current = action.trackId;
-        room.position = 0;
-      } else
-        room.queue.push({
-          id: randomBytes(12).toString("hex"),
-          trackId: action.trackId,
-          memberId: member.id,
-          votes: [],
-        });
-    } else if (action.type === "vote") {
-      const item = room.queue.find((q) => q.id === action.itemId);
-      if (!item) throw new AppError("This song is no longer queued.", 404);
-      item.votes = item.votes.includes(member.id)
-        ? item.votes.filter((id) => id !== member.id)
-        : [...item.votes, member.id];
-    } else if (action.type === "remove" || action.type === "promote") {
-      const index = room.queue.findIndex((q) => q.id === action.itemId);
-      if (index < 0) throw new AppError("This song is no longer queued.", 404);
-      if (action.type === "remove") {
-        if (!member.host && room.queue[index]?.memberId !== member.id)
-          throw new AppError("You can only remove your own requests.", 403);
-        room.queue.splice(index, 1);
-      } else {
-        host();
-        const [item] = room.queue.splice(index, 1);
-        if (item) room.queue.unshift(item);
-      }
-    } else {
-      host();
-      if (action.type === "toggle") {
-        if (!room.current) throw new AppError("Add a song first.");
-        if (room.playing && room.startedAt)
-          room.position += Math.floor((Date.now() - room.startedAt) / 1000);
-        room.playing = !room.playing;
-        room.startedAt = room.playing ? Date.now() : null;
-      }
-      if (action.type === "next") {
-        room.current = room.queue.shift()?.trackId ?? null;
-        room.position = 0;
-        room.startedAt = room.playing && room.current ? Date.now() : null;
-        if (!room.current) room.playing = false;
-      }
-      if (action.type === "lock") room.locked = !room.locked;
-      if (action.type === "end") {
-        room.ended = true;
-        room.playing = false;
-        room.startedAt = null;
-      }
+    if (!["lock", "end"].includes(action.type))
+      throw new AppError("Use the shared queue service for this action.", 409);
+    if (!member.host) throw new AppError("Only the host can do that.", 403);
+    if (action.type === "lock") room.locked = !room.locked;
+    if (action.type === "end") {
+      room.ended = true;
+      room.playing = false;
+      room.startedAt = null;
     }
     save(room);
     return view(room, member.id);

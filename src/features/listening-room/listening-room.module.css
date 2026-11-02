@@ -1,4 +1,60 @@
 .root {
+  :global(.form-field) {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  :global(.field-label) {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  :global(.required-mark) {
+    color: var(--negative);
+  }
+  :global(input[aria-invalid="true"]) {
+    border-color: var(--negative);
+  }
+  :global(.form-field .form-error) {
+    margin: 0;
+    font-size: 13px;
+  }
+  :global(.header-actions > .room-settings-action) {
+    display: inline-flex;
+    width: auto;
+    gap: 7px;
+    padding: 8px;
+    font-size: 12px;
+  }
+  :global(.welcome-state) {
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+    max-width: 560px;
+  }
+  :global(.welcome-state h2) {
+    font-size: clamp(26px, 4vw, 40px);
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+  }
+  :global(.welcome-state p) {
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  @media (max-width: 650px) {
+    :global(.header-actions > .room-settings-action) {
+      display: inline-flex;
+    }
+    :global(.room-settings-action > span) {
+      display: none;
+    }
+  }
   :global(.app-header) {
     position: sticky;
     top: 0;
@@ -741,10 +797,10 @@
     gap: 18px;
   }
   :global(.form-stack) > label,
-  :global(.linked-title-fields) label {
+  :global(.linked-title-fields) :global(.field-label) {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    flex-direction: row;
+    gap: 5px;
     font-size: 13px;
     font-weight: 500;
   }
@@ -759,6 +815,9 @@
     color: var(--ink);
     font-size: 14px;
     font-weight: 400;
+  }
+  :global(.form-stack) :global(.form-field) input[aria-invalid="true"] {
+    border-color: var(--negative);
   }
   :global(.form-stack) fieldset {
     border: 0;
@@ -832,15 +891,6 @@
     font-size: 13px;
     color: var(--negative);
     line-height: 1.6;
-  }
-  :global(.demo-mode-choice) {
-    flex-direction: row !important;
-    align-items: center;
-  }
-  :global(.demo-mode-choice) input {
-    accent-color: #fff;
-    width: 16px;
-    height: 16px;
   }
   :global(.code-input) {
     letter-spacing: 4px;
@@ -1092,10 +1142,6 @@
     grid-template-columns: 1fr 1fr;
     gap: var(--gap);
   }
-  :global(.linked-title-fields) label > span {
-    color: var(--faint);
-    font-weight: 400;
-  }
   :global(.provider-search-handoff) {
     display: flex;
     gap: var(--gap);
@@ -1343,7 +1389,9 @@
       font-size: 12px;
     }
     :global(.header-actions)
-      > :global(.icon-button):not(:global(.mobile-menu)) {
+      > :global(.icon-button):not(:global(.mobile-menu)):not(
+        :global(.room-settings-action)
+      ) {
       display: none;
     }
     :global(.main-content) {

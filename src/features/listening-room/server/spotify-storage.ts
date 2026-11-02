@@ -1,3 +1,4 @@
+import * as v from "valibot";
 import "server-only";
 import {
   createCipheriv,
@@ -126,7 +127,7 @@ export function bindAccount(code: string, tokens: Tokens) {
       data: string;
     }[];
     for (const row of rows) {
-      const room = roomSchema.parse(JSON.parse(row.data));
+      const room = v.parse(roomSchema, JSON.parse(row.data));
       if (
         !room.ended &&
         unseal<Tokens>(row.tokens, row.code).accountId === tokens.accountId
