@@ -49,13 +49,13 @@ export function ThemeToggle() {
     >
       <Sun
         className={styles.sun}
-        size={24}
+        size={18}
         strokeWidth={1.8}
         aria-hidden="true"
       />
       <Moon
         className={styles.moon}
-        size={24}
+        size={18}
         strokeWidth={1.8}
         aria-hidden="true"
       />
