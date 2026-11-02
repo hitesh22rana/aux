@@ -8,10 +8,10 @@ Built with Next.js App Router, TypeScript, Tailwind CSS 4, Redis Streams, SQLite
 
 ## Start locally
 
-Requires Node.js 26.13.0 and npm 12.2.1, plus Docker Compose v2 (or an existing Redis 8.10.3 server). SQLite uses a native module.
+Requires Node.js 26.13.0 and pnpm 12.16.1, plus Docker Compose v2 (or an existing Redis 8.10.3 server). SQLite uses a native module.
 
 ```sh
-npm ci
+pnpm install --frozen-lockfile
 docker compose up -d redis
 # If .env.local does not exist yet:
 cp .env.example .env.local
@@ -39,11 +39,11 @@ A fresh clone contains no credentials. Copy `.env.example` to `.env.local`, gene
 Run the web app and worker in separate terminals from this project directory:
 
 ```sh
-npm run dev -- --hostname 0.0.0.0
+pnpm dev --hostname 0.0.0.0
 ```
 
 ```sh
-npm run worker
+pnpm run worker
 ```
 
 Open **http://127.0.0.1:3000**. Use that hostname for OAuth; Spotify does not accept `localhost` callback URIs. Production and phone-accessible callbacks need an HTTPS hostname with an exact matching redirect URI.
@@ -58,13 +58,13 @@ docker compose ps
 
 `docker-compose.yaml` is the only Compose definition. It runs the web app, playback worker, and Redis 8.10.3. Both app processes use the same image, encryption key, Redis connection, queue namespace, and persistent SQLite volume at `/app/data`. Services use runtime values from `.env.local`; credentials are excluded from the image by `.dockerignore`.
 
-The Dockerfile uses Node.js 26.13.0 and npm 12.2.1, builds native dependencies in a separate stage, verifies types, builds Next.js, and removes development packages from the runtime image. Runtime processes run as the non-root `aux` user. The web health check uses `/api/health`; Redis has its own readiness check.
+The Dockerfile uses Node.js 26.13.0 and pnpm 12.16.1, builds native dependencies in a separate stage, verifies types, builds Next.js, and removes development packages from the runtime image. Runtime processes run as the non-root `aux` user. The web health check uses `/api/health`; Redis has its own readiness check.
 
 Ports 3000 and 6379 bind to loopback for local use. `AUX_PORT` can change the web port. Put a suitable HTTPS reverse proxy in front of the app for external access, and configure the callback origin to match.
 
 Use `docker compose logs web worker` for startup diagnostics. These logs should not contain secrets. Stop with `docker compose down`; do not add `--volumes` when data must be preserved. Redis and SQLite data live in the `aux-redis` and `aux-data` volumes. Back up existing volumes before major storage upgrades. The previous Redis volume name is preserved when upgrading from the old Compose filename.
 
-For the split host-development workflow, start only Redis with `docker compose up -d redis`, then run `npm run dev` and `npm run worker` locally. Do not also run containerized web/worker processes against a different database while testing the same room.
+For the split host-development workflow, start only Redis with `docker compose up -d redis`, then run `pnpm run dev` and `pnpm run worker` locally. Do not also run containerized web/worker processes against a different database while testing the same room.
 
 ## Supported music services
 
@@ -134,13 +134,13 @@ Queue delivery is at-least-once internally. Spotify offers no external idempoten
 ## Verification
 
 ```sh
-npm run lint
-npm run typecheck
-npm run build
+pnpm run lint
+pnpm run typecheck
+pnpm run build
 # Requires a local Redis service; mocks only the Spotify network boundary:
-npm run test:unit
+pnpm run test:unit
 # With the app running on port 3000:
-npm test
+pnpm test
 ```
 
 The integration suite uses a unique Redis namespace on logical database 15 (`AUX_TEST_REDIS_URL` can override it) and an isolated temporary SQLite database. It covers concurrent queue requests, request deduplication, roles, reorder/removal, worker dispatch and recovery, manual interruptions, OAuth replay, encrypted storage, and the actual Spotify HTTP request shape. Playwright covers host/member and mobile flows. Browser emulation cannot verify physical-phone Bluetooth, safe areas, or background OS behavior.
@@ -149,20 +149,17 @@ Real Spotify authentication and external-app playback still need verification wi
 
 ## Source map
 
-- `src/lib/live-queue.ts`, `redis.ts` - durable queue, atomic updates, stream outbox.
-- `src/lib/queue-worker.ts`, `src/worker.ts` - consumer groups, leases, recovery, and playback scheduling.
-- `src/lib/playback/spotify.ts` - provider adapter, token refresh, normalized catalog data.
-- `src/lib/spotify-storage.ts` - encrypted tokens and one-time OAuth state.
-- `src/lib/orchestrator.ts` - queue authorization and provider-independent room actions.
-- `src/app/api/rooms/[code]/spotify/`, `src/app/api/spotify/callback/` - connection, search, request, recovery, and OAuth routes.
-- `src/components/spotify-*.tsx` - automatic Spotify connection and search.
-- `src/lib/providers.ts` - eight-service capability registry, service search links, and safe song-link parser.
-- `src/lib/handoff.ts`, `src/app/api/rooms/[code]/handoff/` - durable selection, cancellation, host confirmation, and manual completion.
-- `src/components/handoff-panel.tsx`, `linked-track-request.tsx` - host-led playback and multi-service link requests.
-- `docker-compose.yaml`, `.env.example` - local infrastructure and environment setup.
+See [Architecture and contribution boundaries](ARCHITECTURE.md) for the full layout and import rules.
+
+- `src/features/listening-room/components/` and `hooks/` own the room interface and browser session lifecycle.
+- `src/features/listening-room/model/` owns shared contracts, service capabilities, link parsing, and demo data.
+- `src/features/listening-room/server/` owns authorization, room persistence, durable queue state, worker dispatch, handoff, and provider adapters.
+- `src/server/` owns database connections and HTTP infrastructure; `src/shared/` owns generic client transport and accessible UI.
+- `src/app/api/` exposes HTTP routes; `src/workers/playback.ts` starts the worker.
+- `docker-compose.yaml` and `.env.example` describe local infrastructure and environment setup.
 
 ## References and assets
 
 [Spotify PKCE](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow) · [Playback API](https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback) · [Redirect requirements](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri) · [Quota modes](https://developer.spotify.com/documentation/web-api/concepts/quota-modes) · [Redis Streams](https://redis.io/docs/latest/develop/use-cases/streaming/nodejs/)
 
-The landscape is from [Unsplash’s image CDN](https://images.unsplash.com/photo-1500534623283-312aade485b7). Demo album illustrations are original SVG placeholders. Live album art links back to Spotify. Service names do not imply affiliation.
+Demo album illustrations are original SVG placeholders. Live album art links back to Spotify. Inter is served locally with its Open Font License in `public/fonts/OFL.txt`. The interface workflow and design decisions are documented in [DESIGN.md](DESIGN.md). Service names do not imply affiliation.

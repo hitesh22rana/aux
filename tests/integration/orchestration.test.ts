@@ -14,13 +14,19 @@ import { randomUUID } from "node:crypto";
 vi.mock("server-only", () => ({}));
 const directory = mkdtempSync(path.join(tmpdir(), "aux-test-"));
 const namespace = `aux-test-${process.pid}`;
-let store: typeof import("../../src/lib/store");
-let queue: typeof import("../../src/lib/live-queue");
-let storage: typeof import("../../src/lib/spotify-storage");
-let worker: typeof import("../../src/lib/queue-worker");
-let provider: typeof import("../../src/lib/playback/spotify");
-let orchestration: typeof import("../../src/lib/orchestrator");
-let redisModule: typeof import("../../src/lib/redis");
+let store: typeof import("@/features/listening-room/server/room-repository");
+let queue: typeof import("@/features/listening-room/server/live-queue");
+let storage: typeof import("@/features/listening-room/server/spotify-storage");
+let worker: typeof import("@/features/listening-room/server/playback-worker");
+let provider: typeof import("@/features/listening-room/server/providers/spotify");
+let orchestration: typeof import("@/features/listening-room/server/room-service");
+let queueKeys: typeof import("@/features/listening-room/server/queue-keys").queueKeys;
+let redisModule: typeof import("@/server/redis/connection");
+function required<T>(value: T | undefined): T {
+  expect(value).toBeDefined();
+  if (value === undefined) throw new Error("Expected a test fixture value.");
+  return value;
+}
 const one = "spotify:track:1111111111111111111111";
 const two = "spotify:track:2222222222222222222222";
 const three = "spotify:track:3333333333333333333333";
@@ -35,7 +41,7 @@ function raw(uri = one) {
     album: { name: "Album", images: [] },
   };
 }
-let player: import("../../src/lib/playback/spotify").Player;
+let player: import("@/features/listening-room/server/providers/spotify").Player;
 function room() {
   const data = store.createRoom(
     "Test session",
@@ -65,13 +71,14 @@ beforeAll(async () => {
     "SPOTIFY_REDIRECT_URI",
     "http://127.0.0.1:3000/api/spotify/callback",
   );
-  store = await import("../../src/lib/store");
-  queue = await import("../../src/lib/live-queue");
-  storage = await import("../../src/lib/spotify-storage");
-  provider = await import("../../src/lib/playback/spotify");
-  worker = await import("../../src/lib/queue-worker");
-  orchestration = await import("../../src/lib/orchestrator");
-  redisModule = await import("../../src/lib/redis");
+  ({ queueKeys } = await import("@/features/listening-room/server/queue-keys"));
+  store = await import("@/features/listening-room/server/room-repository");
+  queue = await import("@/features/listening-room/server/live-queue");
+  storage = await import("@/features/listening-room/server/spotify-storage");
+  provider = await import("@/features/listening-room/server/providers/spotify");
+  worker = await import("@/features/listening-room/server/playback-worker");
+  orchestration = await import("@/features/listening-room/server/room-service");
+  redisModule = await import("@/server/redis/connection");
   await redisModule.redis();
 });
 beforeEach(() => {
@@ -105,7 +112,7 @@ afterAll(async () => {
   for await (const keys of client.scanIterator({ MATCH: `${namespace}:*` }))
     if (keys.length) await client.del(keys);
   await client.close();
-  const { db } = await import("../../src/lib/database");
+  const { db } = await import("@/server/database/sqlite");
   db.close();
   rmSync(directory, { recursive: true, force: true });
   vi.unstubAllEnvs();
@@ -126,13 +133,13 @@ describe("Aux-owned durable queue", () => {
     expect(provider.spotify.play).not.toHaveBeenCalled();
     await orchestration.liveCommand(h.room.code, guest.token, {
       type: "vote",
-      itemId: state.queue[0].id,
+      itemId: required(state.queue[0]).id,
     });
-    expect((await queue.queueState(h.room)).queue[0].votes).toContain(
+    expect(required((await queue.queueState(h.room)).queue[0]).votes).toContain(
       guest.room.me,
     );
     const client = await redisModule.redis();
-    expect(await client.xLen(redisModule.queueKeys.events)).toBeGreaterThan(0);
+    expect(await client.xLen(queueKeys.events)).toBeGreaterThan(0);
   });
   it("allows Aux reorder and removal while enforcing host ownership", async () => {
     const h = room();
@@ -143,18 +150,18 @@ describe("Aux-owned durable queue", () => {
     await expect(
       orchestration.liveCommand(h.room.code, g.token, {
         type: "promote",
-        itemId: state.queue[1].id,
+        itemId: required(state.queue[1]).id,
       }),
     ).rejects.toMatchObject({ status: 403 });
     await orchestration.liveCommand(h.room.code, h.token, {
       type: "promote",
-      itemId: state.queue[1].id,
+      itemId: required(state.queue[1]).id,
     });
     state = await queue.queueState(h.room);
-    expect(state.queue[0].trackId).toBe(two);
+    expect(required(state.queue[0]).trackId).toBe(two);
     await orchestration.liveCommand(h.room.code, g.token, {
       type: "remove",
-      itemId: state.queue[0].id,
+      itemId: required(state.queue[0]).id,
     });
     expect(
       (await queue.queueState(h.room)).queue.map((q) => q.trackId),
@@ -288,7 +295,7 @@ describe("Aux-owned durable queue", () => {
     const h = room();
     await orchestration.requestTrack(h.room.code, h.token, one, randomUUID());
     const client = await redisModule.redis();
-    const stream = redisModule.queueKeys.events;
+    const stream = queueKeys.events;
     try {
       await client.sendCommand([
         "XGROUP",
@@ -393,11 +400,13 @@ describe("Aux-owned durable queue", () => {
 describe("Spotify protocol and secret storage", () => {
   it("encrypts tokens at rest and rejects a replayed OAuth state", async () => {
     const h = room();
-    const { db } = await import("../../src/lib/database");
+    const { db } = await import("@/server/database/sqlite");
     const row = db
       .prepare("SELECT tokens FROM spotify_connections WHERE code=?")
       .get(h.room.code) as { tokens: string };
     expect(row.tokens).not.toContain("test-only-access");
+    expect(row.tokens.split(".")).toHaveLength(3);
+    expect(storage.getTokens(h.room.code)?.access).toBe("test-only-access");
     storage.putOAuth("state-one", {
       code: h.room.code,
       session: "session-hash",
@@ -507,7 +516,7 @@ describe("Spotify protocol and secret storage", () => {
       .mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetcher);
     await provider.spotify.play(h.room.code, one, "phone");
-    const [url, options] = fetcher.mock.calls[0];
+    const [url, options] = required(fetcher.mock.calls[0]);
     expect(url).toContain("/me/player/play?device_id=phone");
     expect(options.method).toBe("PUT");
     expect(JSON.parse(options.body)).toEqual({ uris: [one], position_ms: 0 });
@@ -527,7 +536,10 @@ describe("Spotify protocol and secret storage", () => {
   });
 });
 
-const serviceLinks: [import("../../src/lib/catalog").Provider, string][] = [
+const serviceLinks: [
+  import("@/features/listening-room/model/catalog").Provider,
+  string,
+][] = [
   ["Apple Music", "https://music.apple.com/us/album/song/123?i=456&ls=1"],
   [
     "Amazon Music",
@@ -543,8 +555,9 @@ describe("Multi-provider host-led playback", () => {
   it.each(serviceLinks)(
     "queues and confirms %s without calling its player or Spotify",
     async (name, url) => {
-      const handoff = await import("../../src/lib/handoff");
-      const defs = await import("../../src/lib/providers");
+      const handoff =
+        await import("@/features/listening-room/server/handoff-service");
+      const defs = await import("@/features/listening-room/model/providers");
       const host = store.createRoom(
         "Service session",
         "Host",
@@ -604,7 +617,8 @@ describe("Multi-provider host-led playback", () => {
     },
   );
   it("protects selected requests and cancels a selection without dequeuing", async () => {
-    const handoff = await import("../../src/lib/handoff");
+    const handoff =
+      await import("@/features/listening-room/server/handoff-service");
     const host = store.createRoom(
       "Manual session",
       "Host",
@@ -614,7 +628,7 @@ describe("Multi-provider host-led playback", () => {
     );
     const guest = store.joinRoom(host.room.code, "Member");
     const view = await handoff.requestLinkedTrack(host.room.code, guest.token, {
-      url: serviceLinks[0][1],
+      url: required(serviceLinks[0])[1],
       title: "Song",
       artist: "",
       requestId: randomUUID(),
@@ -623,7 +637,7 @@ describe("Multi-provider host-led playback", () => {
     await expect(
       orchestration.liveCommand(host.room.code, guest.token, {
         type: "remove",
-        itemId: view.queue[0].id,
+        itemId: required(view.queue[0]).id,
       }),
     ).rejects.toMatchObject({ status: 409 });
     const cancelled = await handoff.cancelHandoff(
@@ -634,7 +648,7 @@ describe("Multi-provider host-led playback", () => {
     expect(cancelled.queue).toHaveLength(1);
     await orchestration.liveCommand(host.room.code, guest.token, {
       type: "remove",
-      itemId: view.queue[0].id,
+      itemId: required(view.queue[0]).id,
     });
     expect((await queue.queueState(host.room)).queue).toHaveLength(0);
     await expect(
@@ -642,7 +656,8 @@ describe("Multi-provider host-led playback", () => {
     ).rejects.toMatchObject({ status: 409 });
   });
   it("rejects expired handoffs, mismatched providers, remote controls and ended-room requests", async () => {
-    const handoff = await import("../../src/lib/handoff");
+    const handoff =
+      await import("@/features/listening-room/server/handoff-service");
     const host = store.createRoom(
       "Manual session",
       "Host",
@@ -652,14 +667,14 @@ describe("Multi-provider host-led playback", () => {
     );
     await expect(
       handoff.requestLinkedTrack(host.room.code, host.token, {
-        url: serviceLinks[0][1],
+        url: required(serviceLinks[0])[1],
         title: "Song",
         artist: "",
         requestId: randomUUID(),
       }),
     ).rejects.toMatchObject({ status: 422 });
     await handoff.requestLinkedTrack(host.room.code, host.token, {
-      url: serviceLinks[1][1],
+      url: required(serviceLinks[1])[1],
       title: "Song",
       artist: "",
       requestId: randomUUID(),
@@ -684,16 +699,16 @@ describe("Multi-provider host-led playback", () => {
   });
   it("canonicalizes service links, strips trackers, and rejects unsafe or non-track URLs", async () => {
     const { parseTrackLink, providerDefinitions } =
-      await import("../../src/lib/providers");
+      await import("@/features/listening-room/model/providers");
     expect(providerDefinitions).toHaveLength(8);
     expect(parseTrackLink("https://youtu.be/abcdefghijk?si=share")?.url).toBe(
       "https://music.youtube.com/watch?v=abcdefghijk",
     );
-    expect(parseTrackLink(serviceLinks[0][1])?.url).toBe(
+    expect(parseTrackLink(required(serviceLinks[0])[1])?.url).toBe(
       "https://music.apple.com/us/album/123?i=456",
     );
     expect(parseTrackLink("https://music.apple.com/us/song/name/456")?.id).toBe(
-      parseTrackLink(serviceLinks[0][1])?.id,
+      parseTrackLink(required(serviceLinks[0])[1])?.id,
     );
     for (const unsafe of [
       "javascript:alert(1)",

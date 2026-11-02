@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { checkOrigin, errorResponse } from "@/lib/api";
+import { checkOrigin, errorResponse } from "@/server/http/responses";
 import {
   requestLinkedTrack,
   prepareHandoff,
   confirmHandoff,
   cancelHandoff,
   finishHandoff,
-} from "@/lib/handoff";
+} from "@/features/listening-room/server";
 export const runtime = "nodejs";
 const schema = z.discriminatedUnion("type", [
   z.object({

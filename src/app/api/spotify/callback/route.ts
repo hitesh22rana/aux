@@ -3,19 +3,20 @@ import {
   spotifyConfig,
   requestTokens,
   spotifyRequest,
-} from "@/lib/playback/spotify";
-import {
   takeOAuth,
   digest,
   putTokens,
   bindAccount,
   disconnect,
-} from "@/lib/spotify-storage";
-import { authorizeSpotify, inRoom } from "@/lib/orchestrator";
-import { errorResponse } from "@/lib/api";
-import { RoomError } from "@/lib/errors";
-import { changeQueue } from "@/lib/live-queue";
-import { readRoom } from "@/lib/store";
+  authorizeSpotify,
+  inRoom,
+  changeQueue,
+  readRoom,
+} from "@/features/listening-room/server";
+
+import { errorResponse } from "@/server/http/responses";
+import { AppError } from "@/shared/lib/errors";
+
 export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   let roomCode: string | undefined;
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       state.length > 128 ||
       request.cookies.get("aux_spotify_oauth")?.value !== state
     )
-      throw new RoomError(
+      throw new AppError(
         "Spotify connection could not be verified. Start again from your host room.",
         400,
       );
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     roomCode = pending.code;
     const token = request.cookies.get(`aux_${roomCode}`)?.value;
     if (!token || digest(token) !== pending.session)
-      throw new RoomError(
+      throw new AppError(
         "Return to the browser that hosts this room and connect again.",
         403,
       );
@@ -45,13 +46,13 @@ export async function GET(request: NextRequest) {
     returnOrigin = config.origin;
     verifiedHost = true;
     if (request.nextUrl.searchParams.has("error"))
-      throw new RoomError(
+      throw new AppError(
         "Spotify connection was cancelled. You can try again.",
         400,
       );
     const code = request.nextUrl.searchParams.get("code");
     if (!code || code.length > 4096)
-      throw new RoomError("Spotify did not return an authorization code.", 400);
+      throw new AppError("Spotify did not return an authorization code.", 400);
     await inRoom(roomCode, async () => {
       authorizeSpotify(pending.code, token, true);
       const tokens = await requestTokens({
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
           "/me",
         );
         if (!profile?.id)
-          throw new RoomError("Spotify did not return an account.", 502);
+          throw new AppError("Spotify did not return an account.", 502);
         authorizeSpotify(pending.code, token, true);
         bindAccount(pending.code, { ...tokens, accountId: profile.id });
       } catch (error) {
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
       verifiedHost && roomCode && returnOrigin
         ? NextResponse.redirect(
             new URL(
-              `/?${new URLSearchParams({ room: roomCode, spotify: "error", reason: error instanceof RoomError ? error.message : "Spotify connection failed. Please try again." })}`,
+              `/?${new URLSearchParams({ room: roomCode, spotify: "error", reason: error instanceof AppError ? error.message : "Spotify connection failed. Please try again." })}`,
               returnOrigin,
             ),
           )

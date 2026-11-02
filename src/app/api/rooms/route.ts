@@ -1,10 +1,18 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { redis } from "@/lib/redis";
-import { changeQueue, liveView } from "@/lib/live-queue";
-import { providers } from "@/lib/catalog";
-import { createRoom } from "@/lib/store";
-import { checkOrigin, errorResponse, withSession } from "@/lib/api";
+import { redis } from "@/server/redis/connection";
+import {
+  changeQueue,
+  liveView,
+  createRoom,
+} from "@/features/listening-room/server";
+import { providers } from "@/features/listening-room/contracts";
+
+import {
+  checkOrigin,
+  errorResponse,
+  withSession,
+} from "@/server/http/responses";
 export const runtime = "nodejs";
 const schema = z.object({
   name: z.string().trim().min(1).max(60),

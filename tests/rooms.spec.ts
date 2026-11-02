@@ -72,7 +72,7 @@ test("mobile demo search, queue actions, navigation and empty states", async ({
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Everyone gets a say." }),
+    page.getByRole("heading", { name: "The listening room" }),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -262,7 +262,7 @@ test("Apple Music host-led handoff preserves requests until explicit host confir
     .click();
   await expect(h.locator(".queue-row")).toHaveCount(0);
   await expect(h.locator(".current-track h2")).toHaveText("Our shared song");
-  await expect(h.getByText("HOST CONFIRMED", { exact: true })).toBeVisible();
+  await expect(h.getByText("Host confirmed", { exact: true })).toBeVisible();
   await expect(h.getByRole("progressbar")).not.toBeVisible();
   await h
     .getByRole("button", { name: "Mark current finished", exact: true })

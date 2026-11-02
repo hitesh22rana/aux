@@ -1,11 +1,11 @@
 # Dependency versions and upgrades
 
-Versions were checked against npm's stable `latest` tags and the official image manifests on 2026-11-01. Application dependencies use exact pins with a committed lockfile. Images use explicit stable release tags so upgrades can be reviewed and reproduced.
+Application versions were checked against the registry's stable `latest` tags and the official image manifests on 2026-11-01. pnpm 12.16.1 was checked on 2026-11-02. Application dependencies use exact pins with a committed lockfile. Images use explicit stable release tags so upgrades can be reviewed and reproduced.
 
 | Component                                     | Version |
 | --------------------------------------------- | ------- |
 | Node.js                                       | 26.13.0 |
-| npm                                           | 12.2.1  |
+| pnpm                                          | 12.16.1 |
 | Redis server                                  | 8.10.3  |
 | Redis Node client                             | 6.3.1   |
 | Next.js                                       | 16.4.3  |
@@ -22,13 +22,13 @@ Versions were checked against npm's stable `latest` tags and the official image 
 | Vitest                                        | 5.0.5   |
 | Prettier                                      | 3.9.10  |
 
-The complete dependency list is in `package.json` and `package-lock.json`. Other dependencies were already at their current stable releases. Server and client package version numbers are independent; the Redis client does not need to share the server's major version.
+The complete dependency list is in `package.json` and `pnpm-lock.yaml`. Other dependencies were already at their current stable releases. Server and client package version numbers are independent; the Redis client does not need to share the server's major version.
 
 ## TypeScript compatibility
 
 TypeScript 7.0 does not expose the old JavaScript compiler API used by TypeScript ESLint and some framework tooling. This project follows Microsoft's documented side-by-side setup:
 
-- `@typescript/native` aliases `typescript@7.0.2` and supplies the `tsc` command used by `npm run typecheck`.
+- `@typescript/native` aliases `typescript@7.0.2` and supplies the `tsc` command used by `pnpm run typecheck`.
 - The `typescript` module aliases `@typescript/typescript6@6.0.2`, the current stable compatibility package, for tooling that still requires the compiler API.
 
 This preserves native TypeScript 7 checks without disabling lint rules or forcing unsupported peer dependencies. Next.js retains its supported build-time checker through the compatibility module.
@@ -37,9 +37,9 @@ ESLint 10 uses the current official Next.js plugin, modern React lint rules, Typ
 
 ## Package installation
 
-npm 12 blocks unreviewed dependency install scripts. The `allowScripts` policy explicitly permits the pinned SQLite and esbuild install scripts needed by this application. Review both package contents and approvals when these packages change. Do not approve all install scripts globally.
+pnpm 12 blocks unreviewed dependency build scripts. The `allowBuilds` policy in `pnpm-workspace.yaml` permits the pinned SQLite and esbuild scripts needed by this application. `strictDepBuilds` and `strictPeerDependencies` keep unreviewed builds and incompatible dependency trees from passing installation. Review approvals when these packages change.
 
-Use `npm ci` for reproducible installation. After an intentional dependency upgrade, commit the manifest and lockfile together and check `npm ls` for invalid peers. Do not use `--force` or `--legacy-peer-deps` to conceal incompatibility.
+Use `pnpm install --frozen-lockfile` for reproducible installation. After an intentional dependency upgrade, commit the manifest and lockfile together and check `pnpm list --depth Infinity` for invalid peers. Do not use `--force` or `--legacy-peer-deps` to conceal incompatibility.
 
 ## Upgrade checklist
 
@@ -57,3 +57,5 @@ Use `npm ci` for reproducible installation. After an intentional dependency upgr
 - [TypeScript 7 and compatibility guidance](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/)
 - [ESLint React TypeScript setup](https://eslint-react.xyz/docs/getting-started/typescript)
 - [Next.js project-owned agent instructions](https://nextjs.org/docs/app/api-reference/config/next-config-js/agentRules)
+
+- [pnpm build-script policy](https://pnpm.io/settings/build#allowbuilds)

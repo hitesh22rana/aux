@@ -5,7 +5,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Optional build-only trust for corporate or managed development proxies.
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
-    npm install --global npm@12.2.1 --cache /tmp/npm-bootstrap \
+    npm install --global pnpm@12.16.1 --cache /tmp/npm-bootstrap \
     && rm -rf /tmp/npm-bootstrap
 
 FROM base AS build
@@ -17,13 +17,13 @@ COPY . .
 # Keep development dependencies and install caches out of committed image layers.
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
-    npm ci --cache /tmp/npm-build \
-    && npm run typecheck \
-    && npm run build \
-    && npm prune --omit=dev --cache /tmp/npm-build \
-    && rm -rf /tmp/npm-build .next/cache \
+    pnpm install --frozen-lockfile --store-dir /tmp/pnpm-store \
+    && pnpm run typecheck \
+    && pnpm run build \
+    && pnpm prune --prod --store-dir /tmp/pnpm-store \
+    && rm -rf /tmp/pnpm-store .next/cache \
     && mkdir /runtime \
-    && mv node_modules .next public src next.config.ts tsconfig.json package.json package-lock.json /runtime/
+    && mv node_modules .next public src next.config.ts tsconfig.json package.json pnpm-lock.yaml pnpm-workspace.yaml /runtime/
 
 FROM base AS runtime
 ENV NODE_ENV=production \

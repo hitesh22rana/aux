@@ -10,7 +10,7 @@
     "test": "playwright test",
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write src tests docs *.ts *.mjs *.mts *.yaml README.md AGENTS.md",
-    "worker": "tsx --conditions=react-server --env-file-if-exists=.env.local src/worker.ts",
+    "worker": "tsx --conditions=react-server --env-file-if-exists=.env.local src/workers/playback.ts",
     "test:unit": "vitest run"
   },
   "dependencies": {
@@ -49,11 +49,8 @@
   "description": "Collaborative music sessions with a shared queue across multiple music services.",
   "engines": {
     "node": ">=26.13.0 <27",
-    "npm": ">=12.2.1 <13"
+    "pnpm": ">=12.16.1 <13"
   },
-  "packageManager": "npm@12.2.1",
-  "allowScripts": {
-    "better-sqlite3@13.0.3": true,
-    "esbuild@0.28.2": true
-  }
+  "packageManager": "pnpm@12.16.1",
+  "type": "module"
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { checkOrigin, errorResponse } from "@/lib/api";
+import { checkOrigin, errorResponse } from "@/server/http/responses";
 import {
   authorizeSpotify,
   searchTracks,
@@ -8,18 +8,20 @@ import {
   syncPlayer,
   recoverQueue,
   disconnectRoom,
-} from "@/lib/orchestrator";
-import { spotifyConfig } from "@/lib/playback/spotify";
-import {
+  spotifyConfig,
   hasConnection,
   putOAuth,
   digest,
   cleanupSpotify,
-} from "@/lib/spotify-storage";
+  queueKeys,
+  spotifyScopes,
+} from "@/features/listening-room/server";
+
 import { randomBytes, createHash } from "node:crypto";
-import { redis, queueKeys } from "@/lib/redis";
-import { RoomError } from "@/lib/errors";
-import { spotifyScopes } from "@/lib/playback/spotify";
+import { redis } from "@/server/redis/connection";
+
+import { AppError } from "@/shared/lib/errors";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ code: string }> };
@@ -92,7 +94,7 @@ export async function POST(request: NextRequest, ctx: Context) {
     const host =
       request.headers.get("x-forwarded-host") || request.headers.get("host");
     if (host !== new URL(config.origin).host)
-      throw new RoomError(
+      throw new AppError(
         `Open Aux at ${config.origin} before connecting Spotify, so the host session matches the callback.`,
         409,
       );

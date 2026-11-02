@@ -11,7 +11,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f8f9f5",
+  themeColor: "#000000",
 };
 export default function RootLayout({
   children,
@@ -23,6 +23,7 @@ export default function RootLayout({
       <body>
         {children}
         <Toaster
+          theme="dark"
           position="bottom-center"
           richColors
           closeButton

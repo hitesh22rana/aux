@@ -1,4 +1,4 @@
-import { AuxApp } from "@/components/aux-app";
+import { ListeningRoom } from "@/features/listening-room";
 export default function Home() {
-  return <AuxApp />;
+  return <ListeningRoom />;
 }

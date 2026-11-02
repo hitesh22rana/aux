@@ -1,0 +1,30 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: #000b;
+  z-index: 60;
+}
+.content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, calc(100% - 32px));
+  max-height: min(90dvh, 900px);
+  overflow-y: auto;
+  background: #181818;
+  border: 1px solid #383838;
+  border-radius: 20px;
+  padding: 28px;
+  z-index: 61;
+  box-shadow: 0 20px 80px #0008;
+}
+.title {
+  font-size: 24px;
+  line-height: 1.25;
+}
+.description {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 10px 0 24px;
+}

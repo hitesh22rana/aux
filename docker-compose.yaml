@@ -60,7 +60,8 @@ services:
 
   worker:
     <<: *app
-    command: [node, --conditions=react-server, --import, tsx, src/worker.ts]
+    command:
+      [node, --conditions=react-server, --import, tsx, src/workers/playback.ts]
     depends_on:
       redis:
         condition: service_healthy

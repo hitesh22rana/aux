@@ -1,21 +1,25 @@
+import { roomActionSchema } from "@/features/listening-room/contracts";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { liveView } from "@/lib/live-queue";
-import { liveCommand } from "@/lib/orchestrator";
-import { readRoom, identify, joinRoom, mutate, view } from "@/lib/store";
-import { checkOrigin, errorResponse, withSession } from "@/lib/api";
+import {
+  liveView,
+  liveCommand,
+  readRoom,
+  identify,
+  joinRoom,
+  mutate,
+  view,
+} from "@/features/listening-room/server";
+
+import {
+  checkOrigin,
+  errorResponse,
+  withSession,
+} from "@/server/http/responses";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ code: string }> };
 const codeSchema = z.string().regex(/^[A-F0-9]{6}$/);
-const actionSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("add"), trackId: z.string().max(50) }),
-  z.object({
-    type: z.enum(["vote", "remove", "promote"]),
-    itemId: z.string().max(50),
-  }),
-  z.object({ type: z.enum(["toggle", "next", "lock", "end"]) }),
-]);
 export async function GET(request: NextRequest, context: Context) {
   try {
     const code = codeSchema.parse((await context.params).code.toUpperCase());
@@ -49,7 +53,7 @@ export async function PATCH(request: NextRequest, context: Context) {
   try {
     checkOrigin(request);
     const code = codeSchema.parse((await context.params).code.toUpperCase());
-    const action = actionSchema.parse(await request.json());
+    const action = roomActionSchema.parse(await request.json());
     return NextResponse.json(
       readRoom(code).mode === "live"
         ? await liveCommand(

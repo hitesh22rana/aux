@@ -16,3 +16,6 @@ playwright-report
 *.pem
 *.key
 npm-debug.log*
+
+.taste-skill
+.pnpm-store

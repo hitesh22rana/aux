@@ -26,21 +26,21 @@ Playback capabilities depend on the selected service. Opening a track link does 
 
 ## Run locally
 
-Requires Node.js 26.13.0, npm 12.2.1, and Docker Compose v2 or an existing Redis 8.10.3 server. Use `.nvmrc` to select the project runtime and `npm install --global npm@12.2.1` to select the package manager.
+Requires Node.js 26.13.0, pnpm 12.16.1, and Docker Compose v2 or an existing Redis 8.10.3 server. Use `.nvmrc` to select the project runtime and `corepack enable` with Corepack installed to select the pinned package manager. Alternatively, bootstrap it with `npm install --global pnpm@12.16.1`.
 
 ```sh
 git clone https://github.com/hitesh22rana/aux.git
 cd aux
-npm ci
+pnpm install --frozen-lockfile
 cp .env.example .env.local
 docker compose up -d redis
-npm run dev -- --hostname 0.0.0.0
+pnpm dev --hostname 0.0.0.0
 ```
 
 Start the queue worker in a separate terminal:
 
 ```sh
-npm run worker
+pnpm run worker
 ```
 
 Open **http://127.0.0.1:3000**. The initial demo is silent and works without connecting a music account. Live queues require Redis; automatic playback additionally requires configuring the selected integration. Host-led handoff does not require music-service credentials in Aux.
@@ -64,13 +64,13 @@ Next.js, TypeScript, Tailwind CSS, Redis Streams, SQLite, Radix Dialog, and Sonn
 ## Checks
 
 ```sh
-npm run lint
-npm run typecheck
-npm run build
+pnpm run lint
+pnpm run typecheck
+pnpm run build
 # Requires Redis:
-npm run test:unit
+pnpm run test:unit
 # With the web app running:
-npm test
+pnpm test
 ```
 
 The test suites cover queue concurrency, permissions, durable worker delivery, recovery, host-led confirmation, and desktop/mobile browser flows. External-app behavior and audio output still need testing on real devices.
@@ -79,6 +79,8 @@ The test suites cover queue concurrency, permissions, durable worker delivery, r
 
 - [Setup, integration capabilities, and deployment](docs/SETUP.md)
 - [Dependency versions and upgrade policy](docs/DEPENDENCIES.md)
+- [Architecture and contribution boundaries](docs/ARCHITECTURE.md)
+- [Interface design](docs/DESIGN.md)
 - [Project contribution guidance](AGENTS.md)
 - [Environment template](.env.example)
 - [Local Redis configuration](docker-compose.yaml)

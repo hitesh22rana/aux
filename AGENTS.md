@@ -1,52 +1,48 @@
 # Repository Guidelines
 
-## Structure and architecture
+## Structure
 
-Aux is a Next.js App Router application with a separate playback worker. It manages a shared queue; external music apps play the audio.
+Aux is a Next.js shared listening queue with a separate playback worker. External music apps play the audio. Read `docs/ARCHITECTURE.md` for the dependency boundaries and `docs/SETUP.md` for integration configuration.
 
-- `src/app/`: pages, layouts, and API route handlers.
-- `src/components/`: client UI, dialogs, search, and handoff controls.
-- `src/lib/orchestrator.ts`: membership checks and room actions.
-- `src/lib/live-queue.ts`: Redis queue state and atomic stream events.
-- `src/lib/queue-worker.ts` and `src/worker.ts`: dispatch, leases, and recovery.
-- `src/lib/providers.ts` and `src/lib/playback/`: link validation and provider adapters.
-- `src/lib/database.ts` and `src/lib/spotify-storage.ts`: SQLite persistence and encrypted credentials.
-- `tests/integration/`: Vitest integration tests; `tests/rooms.spec.ts`: Playwright browser tests.
-- `public/`: static assets. `docs/SETUP.md`: environment and integration setup.
+- `src/app/`: thin App Router routes, layouts, metadata and base styles.
+- `src/features/listening-room/`: room UI, hooks, validated contracts and server services.
+- `src/server/`: SQLite, Redis connection and HTTP infrastructure.
+- `src/shared/`: domain-independent HTTP helpers, errors and dialog UI.
+- `src/workers/playback.ts`: background process entrypoint.
+- `tests/integration/`: Vitest integration and boundary checks; `tests/rooms.spec.ts`: Playwright journeys.
+- `public/`: assets and licensed local fonts.
 
-## Development commands
+## Development
 
-Use the Node.js version in `.nvmrc` and npm version in `package.json`.
+Use the Node.js version in `.nvmrc` and pnpm version in `package.json`.
 
 ```sh
-npm ci
-# Only when .env.local does not already exist:
+pnpm install --frozen-lockfile
+# Only if .env.local does not exist:
 cp .env.example .env.local
 docker compose up -d redis
-npm run dev
+pnpm dev
 # In another terminal:
-npm run worker
+pnpm worker
 ```
 
-The app runs at `http://127.0.0.1:3000`. Configure `.env.local` using `docs/SETUP.md`. For the complete container stack, use `docker compose up --build -d`.
+The app runs at `http://127.0.0.1:3000`. The complete stack runs with `docker compose up --build -d`.
 
 ## Validation
 
-- `npm run lint`: ESLint.
-- `npm run typecheck`: Next.js route types and TypeScript checks.
-- `npm run test:unit`: integration tests requiring Redis. Tests isolate SQLite and Redis keys and mock provider APIs. Override the Redis test connection with `AUX_TEST_REDIS_URL`.
-- `npm run build`: production build.
-- `npm test`: browser tests against a running app on port 3000. Use system Chromium or install it with `npx playwright install chromium`.
-- `npm run format`: Prettier.
+- `pnpm lint`: ESLint, including import boundaries.
+- `pnpm typecheck`: route generation and native TypeScript checks.
+- `pnpm test:unit`: Redis/SQLite integration and client-contract tests. `AUX_TEST_REDIS_URL` overrides the isolated Redis test connection.
+- `pnpm build`: production build.
+- `pnpm test`: browser tests against a running app on port 3000. Use system Chromium or `pnpm exec playwright install chromium`.
+- `pnpm format`: Prettier.
 
-Run checks relevant to the change. Queue or playback changes need integration tests; UI flows need browser checks. For container changes, validate Compose and verify web/worker startup. Mocked provider tests do not establish real-device playback support.
+Run checks relevant to the change. Queue/playback changes need integration tests; UI flows need browser checks. Container changes require Compose validation, an image build, and web/worker startup checks. Mocked providers do not establish real-device playback support.
 
-## Implementation conventions
+## Implementation
 
-Use strict TypeScript, `@/` imports for `src/`, existing Tailwind styles, and existing Radix components. Follow Prettier formatting. Validate API input with Zod and enforce host/member permissions on the server. Keep credentials and storage modules server-only.
+Keep feature logic colocated. Routes use the feature's client, contracts, or server public entrypoint. Shared code and infrastructure must not import features. Client modules must not import server implementations. Keep server-only guards. Use strict TypeScript, Zod at data boundaries, existing Tailwind utilities, and scoped CSS Modules.
 
-Keep queue mutations and their events atomic and durable before acknowledging requests. Preserve request deduplication, leases, and recovery. Reconcile uncertain playback commands before retrying. Manual handoff must keep the selected request queued until explicit host confirmation.
+Preserve atomic, durable queue acknowledgment, deduplication, leases, and uncertain-command reconciliation. Manual handoff dequeues only after host confirmation. Enforce permissions server-side.
 
-The web app and worker must share the SQLite directory, encryption key, Redis connection, and queue namespace. Preserve persistent volumes. Never commit credentials, local databases, or build artifacts.
-
-Pin dependency upgrades with the lockfile. See `docs/DEPENDENCIES.md` before changing the TypeScript compiler/API compatibility setup or npm install-script approvals.
+Web and worker share SQLite storage, encryption key, Redis connection and queue namespace. Preserve volumes and never commit credentials or local databases. Pin dependency upgrades with the lockfile. Consult `docs/DEPENDENCIES.md` before changing TypeScript compatibility or pnpm build approvals.
