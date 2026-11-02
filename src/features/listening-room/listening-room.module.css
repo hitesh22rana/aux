@@ -761,7 +761,7 @@
   :global(.member-status-dot) {
     position: absolute;
     right: -3px;
-    bottom: -3px;
+    top: -3px;
     flex-shrink: 0;
     width: 12px;
     height: 12px;

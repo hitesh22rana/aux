@@ -84,6 +84,7 @@ The test suites cover queue concurrency, permissions, durable worker delivery, r
 - [Dependency versions and upgrade policy](docs/DEPENDENCIES.md)
 - [Architecture and contribution boundaries](docs/ARCHITECTURE.md)
 - [Interface design](docs/DESIGN.md)
+- [Provider account connection plan](docs/PROVIDER-CONNECTIONS.md)
 - [Project contribution guidance](AGENTS.md)
 - [Environment template](.env.example)
 - [Local Redis configuration](docker-compose.yaml)

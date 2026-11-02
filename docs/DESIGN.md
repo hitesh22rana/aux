@@ -57,4 +57,4 @@ code and remaining time together in one compact metadata row.
 People cards reserve three equal grid columns on desktop, two on medium screens,
 and one on phones. Unoccupied columns stay empty, so one or two members never
 stretch across the whole desktop row. Each Blobatar sits in a circular raised-color
-frame with its presence badge attached to the lower right; names retain ellipsis.
+frame with its presence badge attached to the upper right; names retain ellipsis.
