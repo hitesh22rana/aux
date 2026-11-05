@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   spotifyConfig,
   requestTokens,
-  spotifyRequest,
+  spotifyAccount,
   takeOAuth,
   digest,
-  putTokens,
   bindAccount,
-  disconnect,
   authorizeSpotify,
   inRoom,
   changeQueue,
@@ -62,20 +60,9 @@ export async function GET(request: NextRequest) {
         code_verifier: pending.verifier,
       });
       authorizeSpotify(pending.code, token, true);
-      putTokens(pending.code, tokens);
-      try {
-        const profile = await spotifyRequest<{ id: string }>(
-          pending.code,
-          "/me",
-        );
-        if (!profile?.id)
-          throw new AppError("Spotify did not return an account.", 502);
-        authorizeSpotify(pending.code, token, true);
-        bindAccount(pending.code, { ...tokens, accountId: profile.id });
-      } catch (error) {
-        disconnect(pending.code);
-        throw error;
-      }
+      const accountId = await spotifyAccount(tokens.access);
+      authorizeSpotify(pending.code, token, true);
+      bindAccount(pending.code, { ...tokens, accountId }, pending.generation);
     });
     await changeQueue(readRoom(roomCode), () => {}, "connected");
     const response = NextResponse.redirect(

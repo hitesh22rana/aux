@@ -31,6 +31,7 @@ export {
   spotifyScopes,
   requestTokens,
   spotifyRequest,
+  spotifyAccount,
 } from "./providers/spotify";
 export {
   hasConnection,

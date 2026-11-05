@@ -197,3 +197,17 @@ People cards reserve three equal grid columns on desktop, two on medium screens,
 and one on phones. Unoccupied columns stay empty, so one or two members never
 stretch across the whole desktop row. Each Blobatar sits in a circular raised-color
 frame with its presence badge attached to the upper right; names retain ellipsis.
+
+### Connection attempt lifecycle
+
+Each connection attempt captures a persisted room generation. Starting another
+attempt or disconnecting rotates it and clears pending OAuth state in a SQLite
+transaction. Final account binding checks the generation in the same transaction
+that enforces account exclusivity and stores encrypted credentials. The generation
+table and its room-deletion trigger are added automatically for existing databases.
+Pending callbacks from before this upgrade must restart connection.
+
+The callback verifies the new account using its exchanged access token in memory.
+It publishes credentials only after account validation and current host checks.
+Failed or superseded attempts do not delete a newer or previously valid connection.
+These lifecycle protections do not replace provider-side authorization or revocation.

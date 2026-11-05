@@ -14,6 +14,8 @@ db.exec(`CREATE TABLE IF NOT EXISTS spotify_connections (code TEXT PRIMARY KEY R
 CREATE TABLE IF NOT EXISTS spotify_oauth (state TEXT PRIMARY KEY, data TEXT NOT NULL, expires INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS spotify_dispatches (code TEXT NOT NULL, request_id TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY(code, request_id));
 CREATE TRIGGER IF NOT EXISTS cleanup_spotify_room AFTER DELETE ON rooms BEGIN DELETE FROM spotify_connections WHERE code=OLD.code; DELETE FROM spotify_dispatches WHERE code=OLD.code; DELETE FROM spotify_oauth WHERE json_extract(data,'$.code')=OLD.code; END;`);
+db.exec(`CREATE TABLE IF NOT EXISTS spotify_connection_generations (code TEXT PRIMARY KEY REFERENCES rooms(code), generation TEXT NOT NULL);
+CREATE TRIGGER IF NOT EXISTS cleanup_spotify_generation AFTER DELETE ON rooms BEGIN DELETE FROM spotify_connection_generations WHERE code=OLD.code; END;`);
 export type Tokens = {
   access: string;
   refresh: string;
@@ -73,20 +75,42 @@ export function hasConnection(code: string) {
     .prepare("SELECT code FROM spotify_connections WHERE code=?")
     .get(code);
 }
-export function disconnect(code: string) {
-  db.prepare("DELETE FROM spotify_connections WHERE code=?").run(code);
+function advanceGeneration(code: string) {
+  const generation = randomBytes(16).toString("hex");
+  db.prepare(
+    "INSERT OR REPLACE INTO spotify_connection_generations VALUES (?,?)",
+  ).run(code, generation);
   db.prepare(
     "DELETE FROM spotify_oauth WHERE json_extract(data,'$.code')=?",
   ).run(code);
+  return generation;
 }
-export type OAuthState = { code: string; session: string; verifier: string };
-export function putOAuth(state: string, data: OAuthState) {
-  db.prepare("DELETE FROM spotify_oauth WHERE expires < ?").run(Date.now());
-  db.prepare("INSERT INTO spotify_oauth VALUES (?,?,?)").run(
-    digest(state),
-    JSON.stringify({ ...data, verifier: seal(data.verifier, data.code) }),
-    Date.now() + 600000,
-  );
+export function disconnect(code: string) {
+  db.transaction(() => {
+    advanceGeneration(code);
+    db.prepare("DELETE FROM spotify_connections WHERE code=?").run(code);
+  })();
+}
+export type OAuthState = {
+  code: string;
+  session: string;
+  verifier: string;
+  generation: string;
+};
+export function putOAuth(state: string, data: Omit<OAuthState, "generation">) {
+  db.transaction(() => {
+    const generation = advanceGeneration(data.code);
+    db.prepare("DELETE FROM spotify_oauth WHERE expires < ?").run(Date.now());
+    db.prepare("INSERT INTO spotify_oauth VALUES (?,?,?)").run(
+      digest(state),
+      JSON.stringify({
+        ...data,
+        generation,
+        verifier: seal(data.verifier, data.code),
+      }),
+      Date.now() + 600000,
+    );
+  })();
 }
 export function takeOAuth(state: string): OAuthState {
   const row = db.transaction(() => {
@@ -112,11 +136,24 @@ export function cleanupSpotify() {
     "DELETE FROM spotify_dispatches WHERE code NOT IN (SELECT code FROM rooms WHERE expires > ?)",
   ).run(Date.now());
   db.prepare("DELETE FROM spotify_oauth WHERE expires < ?").run(Date.now());
+  db.prepare(
+    "DELETE FROM spotify_connection_generations WHERE code NOT IN (SELECT code FROM rooms WHERE expires > ?)",
+  ).run(Date.now());
 }
 
 // Two Aux workers must not compete for the same Spotify account in different rooms.
-export function bindAccount(code: string, tokens: Tokens) {
+export function bindAccount(code: string, tokens: Tokens, generation: string) {
   db.transaction(() => {
+    const current = db
+      .prepare(
+        "SELECT generation FROM spotify_connection_generations WHERE code=?",
+      )
+      .get(code) as { generation: string } | undefined;
+    if (!generation || current?.generation !== generation)
+      throw new AppError(
+        "This connection attempt is no longer current. Connect again.",
+        409,
+      );
     const rows = db
       .prepare(
         "SELECT c.code,c.tokens,r.data FROM spotify_connections c JOIN rooms r ON r.code=c.code WHERE c.code<>? AND r.expires>?",

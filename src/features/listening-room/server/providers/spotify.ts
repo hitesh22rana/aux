@@ -161,6 +161,38 @@ async function access(code: string) {
     throw new SpotifyError("The host needs to connect Spotify first.", 409);
   return tokens.expires < Date.now() + 30000 ? refresh(code, tokens) : tokens;
 }
+/** Resolve the new grant's identity before exposing it to room consumers. */
+export async function spotifyAccount(accessToken: string): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(10000),
+      cache: "no-store",
+      redirect: "error",
+    });
+  } catch {
+    throw new SpotifyError(
+      "Could not verify the Spotify account. Try connecting again.",
+      502,
+    );
+  }
+  if (!response.ok)
+    throw new SpotifyError(
+      "Spotify did not verify the account. Try connecting again.",
+      502,
+    );
+  const profile = v.safeParse(
+    v.object({ id: v.pipe(v.string(), v.minLength(1), v.maxLength(512)) }),
+    await response.json().catch(() => null),
+  );
+  if (!profile.success)
+    throw new SpotifyError(
+      "Spotify returned an invalid account. Try connecting again.",
+      502,
+    );
+  return profile.output.id;
+}
 export async function spotifyRequest<T>(
   code: string,
   path: string,

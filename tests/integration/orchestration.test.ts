@@ -1061,3 +1061,85 @@ describe("membership changes during queue admission", () => {
     expect((await queue.queueState(host.room)).queue).toEqual([]);
   });
 });
+
+describe("connection grant publication", () => {
+  function attempt(code: string) {
+    const state = randomUUID();
+    storage.putOAuth(state, {
+      code,
+      session: "test-session",
+      verifier: "test-verifier",
+    });
+    return storage.takeOAuth(state);
+  }
+  const grant = () => ({
+    access: "new-test-access",
+    refresh: "new-test-refresh",
+    expires: Date.now() + 3600000,
+    accountId: randomUUID(),
+  });
+
+  it("publishes a grant only for the current connection generation", () => {
+    const h = room();
+    const pending = attempt(h.room.code);
+    const tokens = grant();
+    storage.bindAccount(h.room.code, tokens, pending.generation);
+    expect(storage.getTokens(h.room.code)).toEqual(tokens);
+  });
+
+  it("rejects a cancelled generation without publishing credentials", () => {
+    const h = room();
+    const pending = attempt(h.room.code);
+    storage.disconnect(h.room.code);
+    expect(() =>
+      storage.bindAccount(h.room.code, grant(), pending.generation),
+    ).toThrow(expect.objectContaining({ status: 409 }));
+    expect(storage.hasConnection(h.room.code)).toBe(false);
+  });
+
+  it("preserves a newer connection when an older attempt is rejected", () => {
+    const h = room();
+    const older = attempt(h.room.code);
+    const newer = attempt(h.room.code);
+    const tokens = grant();
+    storage.bindAccount(h.room.code, tokens, newer.generation);
+    expect(() =>
+      storage.bindAccount(h.room.code, grant(), older.generation),
+    ).toThrow(expect.objectContaining({ status: 409 }));
+    expect(storage.getTokens(h.room.code)).toEqual(tokens);
+  });
+
+  it("does not replace the existing connection when account verification fails", async () => {
+    const h = room();
+    const previous = storage.getTokens(h.room.code);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ id: "" })),
+    );
+    await expect(
+      provider.spotifyAccount("new-test-access"),
+    ).rejects.toMatchObject({ status: 502 });
+    expect(storage.getTokens(h.room.code)).toEqual(previous);
+  });
+
+  it("verifies the new account without first storing its credentials", async () => {
+    const h = room();
+    storage.disconnect(h.room.code);
+    const fetcher = vi.fn().mockImplementation(async () => {
+      expect(storage.hasConnection(h.room.code)).toBe(false);
+      return Response.json({ id: "verified-account" });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    await expect(provider.spotifyAccount("new-test-access")).resolves.toBe(
+      "verified-account",
+    );
+    expect(fetcher).toHaveBeenCalledWith(
+      "https://api.spotify.com/v1/me",
+      expect.objectContaining({
+        headers: { Authorization: "Bearer new-test-access" },
+        redirect: "error",
+      }),
+    );
+    expect(storage.hasConnection(h.room.code)).toBe(false);
+  });
+});
