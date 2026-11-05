@@ -143,7 +143,7 @@ pnpm run test:unit
 pnpm test
 ```
 
-The integration suite uses a unique Redis namespace on logical database 15 (`AUX_TEST_REDIS_URL` can override it) and an isolated temporary SQLite database. It covers concurrent queue requests, request deduplication, roles, reorder/removal, worker dispatch and recovery, manual interruptions, OAuth replay, encrypted storage, and the actual Spotify HTTP request shape. Playwright covers host/member and mobile flows. Browser emulation cannot verify physical-phone Bluetooth, safe areas, or background OS behavior.
+The integration suite uses a unique Redis namespace on logical database 15 (`AUX_TEST_REDIS_URL` can override it) and an isolated temporary SQLite database. It covers concurrent queue requests, request deduplication, roles, reorder/removal, pending request and vote revocation, request-lock races, worker dispatch and recovery, manual interruptions, OAuth replay, encrypted storage, and the actual Spotify HTTP request shape. Playwright covers host/member and mobile flows. Browser emulation cannot verify physical-phone Bluetooth, safe areas, or background OS behavior.
 
 Real Spotify authentication and external-app playback still need verification with a configured developer app and Premium account. External-app handoff behavior, sign-in, and track availability also need testing on actual host phones; mocked provider tests do not establish live provider access.
 

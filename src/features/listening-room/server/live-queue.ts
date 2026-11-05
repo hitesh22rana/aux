@@ -134,10 +134,12 @@ export async function addToQueue(
   member: string,
   track: Track,
   requestId: string,
+  authorize: () => void,
 ) {
   await changeQueue(
     room,
     (state) => {
+      authorize();
       if (state.ended) throw new AppError("This session has ended.", 410);
       const prior = state.requests[requestId];
       if (prior) {
@@ -167,10 +169,15 @@ export async function addToQueue(
     "requested",
   );
 }
-export async function queueControl(room: Room, type: Control["type"]) {
+export async function queueControl(
+  room: Room,
+  type: Control["type"],
+  authorize: () => void,
+) {
   await changeQueue(
     room,
     (state) => {
+      authorize();
       if (state.ended) throw new AppError("This session has ended.", 410);
       if (type === "recover" && state.operation?.phase === "uncertain")
         state.controls = [];

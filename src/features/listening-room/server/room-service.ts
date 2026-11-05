@@ -51,6 +51,13 @@ export function authorizeLive(
     throw new AppError("Only the host can control the player.", 403);
   return { room, member };
 }
+/** Re-evaluate admission on every optimistic queue attempt. */
+export function authorizeRequest(code: string, token: string | undefined) {
+  const context = authorizeLive(code, token);
+  if (context.room.locked && !context.member.host)
+    throw new AppError("Requests are paused by the host.", 403);
+  return context;
+}
 export function authorizeSpotify(
   code: string,
   token: string | undefined,
@@ -77,6 +84,9 @@ export async function liveCommand(
   const { room, member } = authorizeLive(code, token);
   if (action.type === "kick") {
     const updated = removeMember(code, token, action.memberId);
+    // Fence requests that passed authorization before SQLite revocation. A pending
+    // CAS must either precede this fence or retry against current membership.
+    await changeQueue(updated.room, () => {}, "");
     await clearMemberPresence(code, action.memberId).catch(() => {});
     return liveView(updated.room, updated.me);
   }
@@ -96,6 +106,7 @@ export async function liveCommand(
       disconnect(code);
     }
     const updated = mutate(code, token, action);
+    if (action.type === "lock") await changeQueue(updated, () => {}, "");
     return liveView(updated, member.id);
   }
   if (action.type === "toggle" || action.type === "next") {
@@ -107,7 +118,9 @@ export async function liveCommand(
     if (!member.host)
       throw new AppError("Only the host can control the player.", 403);
     if (!hasConnection(code)) throw new AppError("Connect Spotify first.", 409);
-    await queueControl(room, action.type);
+    await queueControl(room, action.type, () => {
+      authorizeLive(code, token, true);
+    });
     return liveView(room, member.id);
   }
   if (action.type === "add")
@@ -117,6 +130,7 @@ export async function liveCommand(
   await changeQueue(
     room,
     (state) => {
+      authorizeLive(code, token);
       if (state.ended) throw new AppError("This session has ended.", 410);
       const item = state.queue.find((q) => q.id === action.itemId);
       if (!item) throw new AppError("This song is no longer queued.", 404);
@@ -167,12 +181,16 @@ export async function requestTrack(
   const latest = authorizeLive(code, token).room;
   if (latest.locked && !member.host)
     throw new AppError("Requests are paused by the host.", 403);
-  await addToQueue(latest, member.id, track, requestId);
+  await addToQueue(latest, member.id, track, requestId, () => {
+    authorizeRequest(code, token);
+  });
   return liveView(readRoom(code), member.id);
 }
 export async function recoverQueue(code: string, token: string | undefined) {
   const { room, member } = authorizeSpotify(code, token, true);
-  await queueControl(room, "recover");
+  await queueControl(room, "recover", () => {
+    authorizeSpotify(code, token, true);
+  });
   return liveView(room, member.id);
 }
 const searches = new Map<
@@ -229,6 +247,7 @@ export async function leaveSession(code: string, token: string | undefined) {
   if (member.host && !room.ended)
     await liveCommand(code, token, { type: "end" });
   revokeMembership(code, token);
+  await changeQueue(readRoom(code), () => {}, "");
   // Revocation is authoritative; ephemeral presence also expires if cleanup is unavailable.
   await clearMemberPresence(code, member.id).catch(() => {});
   return { left: true as const, ended: member.host || room.ended };

@@ -151,6 +151,12 @@ on smaller screens. Names truncate visually while preserving their full text.
 A host can confirm removal from a member's card. The server checks the requesting
 session, host role, room status and target membership; a host cannot remove themself
 or another host. SQLite atomically marks departure and revokes all target sessions.
+Queue admission rechecks membership and request-lock state on every CAS attempt.
+Removal, explicit departure and request-lock changes advance the shared queue
+version before returning success. Pending commits authorized against an earlier
+version must retry and pass current authorization. SQLite and Redis are separate
+stores: a fence failure returns an error even if SQLite revocation already took
+effect. Already committed requests remain attributed to their original member.
 Presence is cleared best effort. Existing accepted requests and author attribution
 remain intact. Revoked browsers return home on their next room poll. Removal revokes
 a membership; this account-free application does not establish a permanent identity

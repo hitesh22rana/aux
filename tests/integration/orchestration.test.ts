@@ -939,3 +939,125 @@ it("only hosts remove guests, revoke all guest sessions and preserve accepted re
     orchestration.requestTrack(host.room.code, guest.token, two, randomUUID()),
   ).rejects.toMatchObject({ status: 401 });
 });
+
+describe("membership changes during queue admission", () => {
+  async function holdCommit(code: string) {
+    const client = await redisModule.redis();
+    const original = client.eval.bind(client);
+    const reached = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    let held = false;
+    vi.spyOn(client, "eval").mockImplementation(async (...args) => {
+      if (!held && args[1]?.keys?.[0] === queueKeys.state(code)) {
+        held = true;
+        reached.resolve();
+        await release.promise;
+      }
+      return original(...args);
+    });
+    return { reached: reached.promise, release: release.resolve };
+  }
+
+  it.each(["kick", "leave", "lock"] as const)(
+    "rejects a pending request after completed %s, including an already authorized CAS",
+    async (action) => {
+      const h = room();
+      const guest = store.joinRoom(h.room.code, "Guest");
+      await orchestration.requestTrack(h.room.code, h.token, one, randomUUID());
+      const gate = await holdCommit(h.room.code);
+      const pending = orchestration.requestTrack(
+        h.room.code,
+        guest.token,
+        two,
+        randomUUID(),
+      );
+      // Attach the rejection observer before releasing a pending async operation.
+      const rejected = expect(pending).rejects.toMatchObject({
+        status: action === "lock" ? 403 : 401,
+      });
+      await gate.reached;
+      try {
+        if (action === "leave")
+          await orchestration.leaveSession(h.room.code, guest.token);
+        else
+          await orchestration.liveCommand(
+            h.room.code,
+            h.token,
+            action === "kick"
+              ? { type: "kick", memberId: guest.room.me }
+              : { type: "lock" },
+          );
+      } finally {
+        gate.release();
+      }
+      await rejected;
+      expect(
+        (await queue.queueState(h.room)).queue.map((item) => item.trackId),
+      ).toEqual([one]);
+    },
+  );
+
+  it("rechecks membership when a pending vote retries after removal", async () => {
+    const h = room();
+    const guest = store.joinRoom(h.room.code, "Guest");
+    await orchestration.requestTrack(h.room.code, h.token, one, randomUUID());
+    const item = required((await queue.queueState(h.room)).queue[0]);
+    const gate = await holdCommit(h.room.code);
+    const pending = orchestration.liveCommand(h.room.code, guest.token, {
+      type: "vote",
+      itemId: item.id,
+    });
+    const rejected = expect(pending).rejects.toMatchObject({ status: 401 });
+    await gate.reached;
+    try {
+      await orchestration.liveCommand(h.room.code, h.token, {
+        type: "kick",
+        memberId: guest.room.me,
+      });
+    } finally {
+      gate.release();
+    }
+    await rejected;
+    expect(required((await queue.queueState(h.room)).queue[0]).votes).toEqual(
+      [],
+    );
+  });
+
+  it("rejects a pending linked request after removal before the Redis read completes", async () => {
+    const host = store.createRoom("Shared session", "Host", "Apple Music");
+    const guest = store.joinRoom(host.room.code, "Guest");
+    const handoff =
+      await import("@/features/listening-room/server/handoff-service");
+    const client = await redisModule.redis();
+    const original = client.get.bind(client);
+    const reached = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    let held = false;
+    vi.spyOn(client, "get").mockImplementation(async (...args) => {
+      if (!held && args[0] === queueKeys.state(host.room.code)) {
+        held = true;
+        reached.resolve();
+        await release.promise;
+      }
+      return original(...args);
+    });
+    const pending = handoff.requestLinkedTrack(host.room.code, guest.token, {
+      url: "https://music.apple.com/us/song/456",
+      title: "Shared song",
+      artist: "Artist",
+      requestId: randomUUID(),
+    });
+    const rejected = expect(pending).rejects.toMatchObject({ status: 401 });
+    await reached.promise;
+    try {
+      await orchestration.liveCommand(host.room.code, host.token, {
+        type: "kick",
+        memberId: guest.room.me,
+      });
+    } finally {
+      release.resolve();
+    }
+    await rejected;
+    expect((await queue.queueState(host.room)).queue).toEqual([]);
+  });
+});

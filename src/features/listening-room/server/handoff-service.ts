@@ -1,7 +1,10 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { AppError } from "@/shared/lib/errors";
-import { authorizeLive } from "@/features/listening-room/server/room-service";
+import {
+  authorizeLive,
+  authorizeRequest,
+} from "@/features/listening-room/server/room-service";
 import {
   addToQueue,
   changeQueue,
@@ -51,7 +54,9 @@ export async function requestLinkedTrack(
     provider: link.provider,
     url: link.url,
   };
-  await addToQueue(room, member.id, track, input.requestId);
+  await addToQueue(room, member.id, track, input.requestId, () => {
+    authorizeRequest(code, token);
+  });
   return liveView(room, member.id);
 }
 export async function prepareHandoff(
@@ -63,6 +68,7 @@ export async function prepareHandoff(
   const result = await changeQueue(
     room,
     (state) => {
+      context(code, token, true);
       if (state.ended) throw new AppError("This session has ended.", 410);
       if (state.handoff && state.handoff.expiresAt > Date.now()) {
         if (itemId && itemId !== state.handoff.itemId)
@@ -103,6 +109,7 @@ export async function confirmHandoff(
   await changeQueue(
     room,
     (state) => {
+      context(code, token, true);
       if (state.ended) throw new AppError("This session has ended.", 410);
       if (state.lastConfirmedHandoff === id) return;
       const pending = state.handoff;
@@ -138,6 +145,7 @@ export async function cancelHandoff(
   await changeQueue(
     room,
     (state) => {
+      context(code, token, true);
       if (state.handoff?.id === id) delete state.handoff;
     },
     "handoff.cancelled",
@@ -149,6 +157,7 @@ export async function finishHandoff(code: string, token: string | undefined) {
   await changeQueue(
     room,
     (state) => {
+      context(code, token, true);
       if (state.handoff && state.handoff.expiresAt > Date.now())
         throw new AppError(
           "Confirm or cancel the selected request first.",
